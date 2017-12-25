@@ -12,6 +12,7 @@ export default {
     footerClass: [String, Object, Array]
   },
   render (h, ctx) {
+    console.log('QModalLayout-Render')
     const
       child = [],
       props = ctx.props,
@@ -48,7 +49,7 @@ export default {
     }
 
     return h('div', {
-      staticClass: 'q-modal-layout column absolute-full'
+      staticClass: 'q-modal-layout column col no-wrap'
     }, child)
   }
 }
