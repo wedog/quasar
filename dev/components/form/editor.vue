@@ -1,6 +1,7 @@
 <template>
   <div class="layout-padding">
     <q-editor
+      style="margin-right: 8em"
       ref="editor"
       v-model="model"
       :toolbar="[
@@ -70,8 +71,8 @@
         gogu: {tip: 'Custom', icon: 'account_balance', handler: vm => vm.runCmd('print')}
       }"
     >
-      <q-btn compact size="sm" color="yellow" slot="custom_btn">Wow</q-btn>
-      <q-btn-dropdown size="sm" compact no-caps ref="token" no-wrap slot="token" color="green" label="Token">
+      <q-btn dense size="sm" color="yellow" slot="custom_btn">Wow</q-btn>
+      <q-btn-dropdown size="sm" dense no-caps ref="token" no-wrap slot="token" color="green" label="Token">
         <q-list link separator>
           <q-item tag="label" @click="add('email')">
             <q-item-side icon="mail" />
@@ -94,7 +95,7 @@
 export default {
   data () {
     return {
-      model: ''
+      model: '<div>Editor in <a href="http://quasar-framework.org">Quasar</a></div><div>Second line</div>'
     }
   },
   methods: {

@@ -153,7 +153,7 @@ import { QCheckbox } from '../checkbox'
 import { QRadio } from '../radio'
 import { QToggle } from '../toggle'
 import SelectMixin from '../../mixins/select'
-import clone from '../../utils/clone'
+import extend from '../../utils/extend'
 
 function defaultFilterFn (terms, obj) {
   return obj.label.toLowerCase().indexOf(terms) > -1
@@ -189,11 +189,7 @@ export default {
       }
     },
     visibleOptions () {
-      let opts = clone(this.options).map((opt, index) => {
-        opt.index = index
-        opt.value = this.options[index].value
-        return opt
-      })
+      let opts = this.options.map((opt, index) => extend({}, opt, { index }))
       if (this.filter && this.terms.length) {
         const lowerTerms = this.terms.toLowerCase()
         opts = opts.filter(opt => this.filterFn(lowerTerms, opt))
@@ -216,9 +212,6 @@ export default {
       this[this.$refs.popover.showing ? 'hide' : 'show']()
     },
     show () {
-      if (this.disable) {
-        return Promise.reject(new Error())
-      }
       return this.$refs.popover.show()
     },
     hide () {
@@ -255,9 +248,7 @@ export default {
       this.focused = false
       this.$emit('blur')
       this.terms = ''
-      if (JSON.stringify(this.model) !== JSON.stringify(this.value)) {
-        this.$emit('change', this.model)
-      }
+      this.$emit('change', this.model)
     },
     __singleSelect (val, disable) {
       if (disable) {

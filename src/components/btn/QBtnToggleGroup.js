@@ -26,7 +26,7 @@ export default {
     noWrap: Boolean,
     outline: Boolean,
     flat: Boolean,
-    compact: Boolean,
+    dense: Boolean,
     rounded: Boolean,
     push: Boolean,
     size: String,
@@ -60,6 +60,9 @@ export default {
     this.options.map(
       (opt, i) => h(QBtnToggle, {
         key: `${opt.label}${opt.icon}${opt.iconRight}`,
+        attrs: {
+          tabindex: opt.tabindex || 0
+        },
         on: { change: () => this.set(opt.value, opt) },
         props: {
           toggled: this.val[i],
@@ -76,7 +79,7 @@ export default {
           push: this.push,
           glossy: this.glossy,
           size: this.size,
-          compact: this.compact,
+          dense: this.dense,
           noRipple: this.noRipple,
           waitForRipple: this.waitForRipple
         }

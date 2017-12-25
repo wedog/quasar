@@ -1,4 +1,5 @@
 import { QBtn, QBtnToggle, QBtnDropdown, QBtnGroup } from '../btn'
+import { QInput } from '../input'
 import { QTooltip } from '../tooltip'
 import { QList, QItem, QItemSide, QItemMain } from '../list'
 import extend from '../../utils/extend'
@@ -37,6 +38,7 @@ function getBtn (h, vm, btn, clickHandler) {
       props: extend({
         icon: btn.icon,
         label: btn.label,
+        dense: true,
         toggled: btn.toggled ? btn.toggled(vm) : btn.cmd && vm.caret.is(btn.cmd, btn.param),
         color: vm.color,
         toggleColor: vm.toggleColor,
@@ -50,6 +52,7 @@ function getBtn (h, vm, btn, clickHandler) {
       props: extend({
         icon: btn.icon,
         color: vm.color,
+        dense: true,
         label: btn.label,
         disable: btn.disable ? btn.disable(vm) : false
       }, vm.buttonProps),
@@ -193,4 +196,83 @@ export function getFonts (defaultFont, defaultFontLabel, defaultFontIcon, fonts 
   })
 
   return def
+}
+
+export function getLinkEditor (h, vm) {
+  if (vm.caret) {
+    let link = vm.editLinkUrl
+    const updateLink = () => {
+      vm.caret.restore()
+      if (link !== vm.editLinkUrl) {
+        document.execCommand('createLink', false, link === '' ? ' ' : link)
+      }
+      vm.editLinkUrl = null
+    }
+
+    return [
+      h(QInput, {
+        key: 'qedt_btm_input',
+        staticClass: 'q-ma-none q-pa-none col',
+        props: {
+          value: link,
+          color: 'dark',
+          autofocus: true,
+          hideUnderline: true,
+          floatLabel: vm.$q.i18n.editor.url
+        },
+        on: {
+          input: val => (link = val),
+          keyup: event => {
+            switch (event.keyCode) {
+              case 13: // enter
+                return updateLink()
+              case 27: // escape
+                vm.caret.restore()
+                vm.editLinkUrl = null
+                break
+            }
+          }
+        }
+      }),
+      h(QBtnGroup, {
+        key: 'qedt_btm_grp',
+        props: {
+          flat: true
+        }
+      }, [
+        h(QBtn, {
+          key: 'qedt_btm_rem',
+          attrs: {
+            tabindex: -1
+          },
+          props: {
+            color: 'negative',
+            label: vm.$q.i18n.label.remove,
+            flat: true,
+            dense: true,
+            noCaps: true
+          },
+          on: {
+            click: () => {
+              vm.caret.restore()
+              document.execCommand('unlink')
+              vm.editLinkUrl = null
+            }
+          }
+        }),
+        h(QBtn, {
+          key: 'qedt_btm_upd',
+          props: {
+            label: vm.$q.i18n.label.update,
+            flat: true,
+            dense: true,
+            noCaps: true
+          },
+          on: {
+            click: updateLink
+          }
+        })
+      ])
+    ]
+  }
 }

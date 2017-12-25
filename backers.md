@@ -26,6 +26,8 @@ It could be you!
 
 <a href="http://picktype.com" target="_blank"><img src="https://picktype.com/wp-content/uploads/2017/04/pt-trans-full-256.png" width="200px"></a>
 
+- Adrien M
+
 ---
 
 ### $50+
@@ -39,9 +41,10 @@ It could be you!
 
 ### $10+
 
-- Max Matteo Staack ($40)
+- Max Matteo Staack ($50)
 - Valerian Cure ($25)
 - Shawn Makinson ($25)
+- Edinei Cipriani ($25)
 - Anca-Anamaria Enache ($20)
 - MSG Group ($20)
 - Pawel Rakowski ($20)
