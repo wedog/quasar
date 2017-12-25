@@ -188,7 +188,6 @@ export default {
     }
   },
   render (h) {
-    console.log('QModal-Render')
     return h(QTransition, {
       props: {
         name: this.modalTransition,

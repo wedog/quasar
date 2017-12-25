@@ -12,7 +12,6 @@ export default {
     footerClass: [String, Object, Array]
   },
   render (h, ctx) {
-    console.log('QModalLayout-Render')
     const
       child = [],
       props = ctx.props,
