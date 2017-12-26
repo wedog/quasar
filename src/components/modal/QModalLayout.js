@@ -48,7 +48,7 @@ export default {
     }
 
     return h('div', {
-      staticClass: 'q-modal-layout column absolute-full'
+      staticClass: 'q-modal-layout column col no-wrap'
     }, child)
   }
 }

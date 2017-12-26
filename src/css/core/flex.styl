@@ -20,7 +20,9 @@
   flex-wrap wrap-reverse
 
 .col
-  flex-basis 0
+  // commented out values will be auto, this permit flex-grow under more scenarios, 
+  // such as the modal absolute full-screen, which causes the grow to collapse
+  // flex-basis 0
   flex-grow 1
   min-height 1px
   min-width 0
