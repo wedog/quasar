@@ -77,11 +77,6 @@ export default {
     minimized: Boolean,
     maximized: Boolean
   },
-  data () {
-    return {
-      contentStaticClasses: ''
-    }
-  },
   watch: {
     $route () {
       this.hide()
@@ -172,16 +167,6 @@ export default {
     }
   },
   mounted () {
-    // Add column class when a q-modal-layout is a child to permit it to grow to fill
-    this.contentStaticClasses = 'modal-content scroll'
-    if (this.$el.firstChild) {
-      if (this.$el.firstChild.firstChild) {
-        if (this.$el.firstChild.firstChild.className.search('q-modal-layout') >= 0) {
-          this.contentStaticClasses += ' column'
-        }
-      }
-    }
-
     if (this.value) {
       this.show()
     }
@@ -226,7 +211,7 @@ export default {
       }, [
         h('div', {
           ref: 'content',
-          staticClass: this.contentStaticClasses,
+          staticClass: 'modal-content scroll',
           style: this.modalCss,
           'class': this.contentClasses,
           on: {

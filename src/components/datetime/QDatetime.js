@@ -45,34 +45,29 @@ export default {
       return !this.disable && !this.readonly
     },
     actualValue () {
-      debugger
       if (this.displayValue) {
         return this.displayValue
       }
       if (!this.value) {
         return this.placeholder || ''
       }
+
+      let format
+
       if (this.format) {
-        return formatDate(this.value, this.format, /* for reactiveness */ this.$q.i18n.date)
+        format = this.format
+      }
+      else if (this.type === 'date') {
+        format = 'YYYY-MM-DD'
+      }
+      else if (this.type === 'time') {
+        format = 'HH:mm'
       }
       else {
-        // If no format was specified, use the locale
-        let date = new Date(this.value)
-        if (isNaN(date.valueOf())) {
-          return this.placeholder || ''
-        }
-        else {
-          if (this.type === 'date') {
-            return date.toLocaleDateString()
-          }
-          else if (this.type === 'time') {
-            return date.toLocaleTimeString()
-          }
-          else {
-            return date.toLocaleString()
-          }
-        }
+        format = 'YYYY-MM-DD HH:mm:ss'
       }
+
+      return formatDate(this.value, format, /* for reactiveness */ this.$q.i18n.date)
     }
   },
   methods: {
