@@ -1,11 +1,7 @@
 .q-btn
-  display inline-flex
-  align-items center
-  justify-content center
   outline 0
   border 0
   vertical-align middle
-  vertical-align -webkit-baseline-middle
   cursor pointer
   -webkit-appearance button
   padding $button-padding
@@ -15,16 +11,14 @@
   background transparent
   transition $button-transition
   min-height 2.572em
-  .q-icon
+  .q-icon, .q-spinner
     font-size 1.4em
-  .q-spinner
-    height 1.4em
-    width 1.4em
+  // workaround for alignment/sizing change when showing loader
+  .q-btn-inner:before
+    content ''
 
   &.disabled
     opacity .7 !important
-  &.full-width
-    border-radius 0 !important
 
 .q-btn-progress
   transition all .3s
@@ -58,8 +52,8 @@
   width 3em
 
 .q-btn-dense
-  padding $button-dense-padding
-  min-height 0
+  padding .285em
+  min-height 2em
   &.q-btn-round
     padding 0
     height 2.4em
@@ -68,7 +62,6 @@
     margin-right 6px
   .on-right
     margin-left 6px
-
 
 .q-btn-fab, .q-btn-fab-mini
   .q-icon

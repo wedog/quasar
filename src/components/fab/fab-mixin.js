@@ -4,6 +4,11 @@ export default {
     push: Boolean,
     flat: Boolean,
     color: String,
-    glossy: Boolean
+    textColor: String,
+    glossy: Boolean,
+    icon: {
+      type: String,
+      required: true
+    }
   }
 }

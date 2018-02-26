@@ -1,11 +1,23 @@
 import Ripple from '../../directives/ripple'
 import { QIcon } from '../icon'
+import AlignMixin from '../../mixins/align'
 
 const sizes = {
-  xs: 8, sm: 10, md: 14, lg: 20, xl: 24
+  xs: 8,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 24,
+  form: 12.446,
+  'form-label': 17.11,
+  'form-hide-underline': 9.335,
+  'form-label-hide-underline': 14,
+  'form-inverted': 15.555,
+  'form-label-inverted': 20.22
 }
 
 export default {
+  mixins: [AlignMixin],
   components: {
     QIcon
   },
@@ -13,6 +25,7 @@ export default {
     Ripple
   },
   props: {
+    loading: Boolean,
     disable: Boolean,
     label: [Number, String],
     noCaps: Boolean,
@@ -31,7 +44,8 @@ export default {
     textColor: String,
     glossy: Boolean,
     dense: Boolean,
-    noRipple: Boolean
+    noRipple: Boolean,
+    tabindex: Number
   },
   computed: {
     style () {
@@ -56,10 +70,11 @@ export default {
     hasRipple () {
       return __THEME__ === 'mat' && !this.noRipple && !this.isDisabled
     },
+    computedTabIndex () {
+      return this.isDisabled ? -1 : this.tabindex || 0
+    },
     classes () {
-      const
-        cls = [ this.shape ],
-        color = this.toggled ? this.toggleColor : this.color
+      const cls = [ this.shape ]
 
       if (this.fab) {
         cls.push('q-btn-fab')
@@ -85,33 +100,33 @@ export default {
         cls.push('q-focusable q-hoverable')
       }
 
-      if (color) {
+      if (this.color) {
         if (this.flat || this.outline) {
-          cls.push(`text-${this.textColor || color}`)
+          cls.push(`text-${this.textColor || this.color}`)
         }
         else {
-          cls.push(`bg-${color}`)
+          cls.push(`bg-${this.color}`)
           cls.push(`text-${this.textColor || 'white'}`)
         }
+      }
+      else if (this.textColor) {
+        cls.push(`text-${this.textColor}`)
       }
 
       cls.push({
         'q-btn-no-uppercase': this.noCaps,
         'q-btn-rounded': this.rounded,
         'q-btn-dense': this.dense,
-        'q-btn-toggle-active': this.toggled,
         'glossy': this.glossy
       })
 
       return cls
-    }
-  },
-  methods: {
-    removeFocus (e) {
-      // if is touch enabled and focus was received from pointer
-      if (this.$q.platform.has.touch && e.detail) {
-        this.$el.blur()
-      }
+    },
+    innerClasses () {
+      const classes = [ this.alignClass ]
+      this.noWrap && classes.push('no-wrap', 'text-no-wrap')
+      this.repeating && classes.push('non-selectable')
+      return classes
     }
   }
 }

@@ -81,6 +81,9 @@ export default {
     canGoToNext () {
       return this.infinite ? this.slidesNumber > 1 : this.slide < this.slidesNumber - 1
     },
+    computedQuickNavIcon () {
+      return this.quickNavIcon || this.$q.icon.carousel.quickNav
+    },
     computedStyle () {
       if (!this.inFullscreen && this.height) {
         return `height: ${this.height}`
@@ -218,7 +221,7 @@ export default {
 
       if (event.isFinal) {
         this.goToSlide(
-          event.distance.x < 100
+          event.distance.x < 40
             ? this.slide
             : this.positionSlide,
           true
@@ -300,7 +303,7 @@ export default {
             key: i,
             'class': { inactive: i !== this.slide },
             props: {
-              icon: this.quickNavIcon || this.$q.icon.carousel.quickNav,
+              icon: this.computedQuickNavIcon,
               round: true,
               flat: true,
               dense: true,
@@ -333,7 +336,11 @@ export default {
           ? null
           : [{
             name: 'touch-pan',
-            modifiers: { horizontal: true },
+            modifiers: {
+              horizontal: true,
+              prevent: true,
+              stop: true
+            },
             value: this.__pan
           }]
       }, [
@@ -374,7 +381,6 @@ export default {
       this.__setArrowKeys(true)
     }
     this.__stopSlideNumberNotifier = this.$watch('slidesNumber', val => {
-      this.$emit('slides-number', val)
       if (this.value >= val) {
         this.$emit('input', val - 1)
       }

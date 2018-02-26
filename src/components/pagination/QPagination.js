@@ -2,6 +2,7 @@ import { between } from '../../utils/format'
 import { QBtn } from '../btn'
 import { QInput } from '../input'
 import extend from '../../utils/extend'
+import { getEventKey } from '../../utils/event'
 
 export default {
   name: 'q-pagination',
@@ -22,6 +23,7 @@ export default {
       type: String,
       default: 'primary'
     },
+    textColor: String,
     size: String,
     disable: Boolean,
     input: Boolean,
@@ -71,15 +73,17 @@ export default {
       get () {
         return this.value
       },
-      set (value) {
-        if (this.disable || !value || isNaN(value)) {
+      set (val) {
+        if (this.disable || !val || isNaN(val)) {
           return
         }
-        const model = between(parseInt(value, 10), this.min, this.max)
-        if (this.value !== model) {
-          this.$emit('input', model)
-        }
-        this.$emit('change', model)
+        const value = between(parseInt(val, 10), this.min, this.max)
+        this.$emit('input', value)
+        this.$nextTick(() => {
+          if (JSON.stringify(value) !== JSON.stringify(this.value)) {
+            this.$emit('change', value)
+          }
+        })
       }
     },
     inputPlaceholder () {
@@ -109,8 +113,8 @@ export default {
       this.model = this.newPage
       this.newPage = null
     },
-    __getRepeatEasing (from = 300, step = 10, to = 100) {
-      return (cnt) => cnt ? Math.max(to, from - cnt * cnt * step) : 100
+    __repeatTimeout (count) {
+      return Math.max(100, 300 - count * count * 10)
     },
     __getBool (val, otherwise) {
       return [true, false].includes(val)
@@ -162,7 +166,7 @@ export default {
         props: {
           disable: this.disable || this.value <= this.min,
           icon: this.$q.icon.pagination.prev,
-          repeatTimeout: this.__getRepeatEasing()
+          repeatTimeout: this.__repeatTimeout
         },
         on: {
           click: () => this.setByOffset(-1)
@@ -173,7 +177,7 @@ export default {
         props: {
           disable: this.disable || this.value >= this.max,
           icon: this.$q.icon.pagination.next,
-          repeatTimeout: this.__getRepeatEasing()
+          repeatTimeout: this.__repeatTimeout
         },
         on: {
           click: () => this.setByOffset(1)
@@ -183,7 +187,7 @@ export default {
 
     if (this.input) {
       contentMiddle.push(h(QInput, {
-        staticClass: 'inline no-margin no-padding',
+        staticClass: 'inline no-padding',
         style: {
           width: `${this.inputPlaceholder.length}rem`
         },
@@ -200,7 +204,7 @@ export default {
         },
         on: {
           input: value => (this.newPage = value),
-          keyup: event => (event.keyCode === 13 && this.__update()),
+          keydown: event => (getEventKey(event) === 13 && this.__update()),
           blur: () => this.__update()
         }
       }))
@@ -222,7 +226,7 @@ export default {
         maxPages = 1 + Math.floor(maxPages / 2) * 2
         pgFrom = Math.max(this.min, Math.min(this.max - maxPages + 1, this.value - Math.floor(maxPages / 2)))
         pgTo = Math.min(this.max, pgFrom + maxPages - 1)
-        if (this.__boundaryNumbers && pgFrom > this.min) {
+        if (this.__boundaryNumbers) {
           boundaryStart = true
           pgFrom += 1
         }
@@ -230,7 +234,7 @@ export default {
           ellipsesStart = true
           pgFrom += 1
         }
-        if (this.__boundaryNumbers && pgTo < this.max) {
+        if (this.__boundaryNumbers) {
           boundaryEnd = true
           pgTo -= 1
         }
@@ -243,12 +247,16 @@ export default {
         minWidth: `${Math.max(1.5, String(this.max).length)}em`
       }
       if (boundaryStart) {
+        const active = this.min === this.value
         contentStart.push(this.__getBtn(h, {
           key: 'bns',
           style,
           props: {
-            disable: this.disable || this.value <= this.min,
-            label: this.min
+            disable: this.disable,
+            flat: !active,
+            textColor: active ? this.textColor : null,
+            label: this.min,
+            noRipple: true
           },
           on: {
             click: () => this.set(this.min)
@@ -256,12 +264,16 @@ export default {
         }))
       }
       if (boundaryEnd) {
+        const active = this.max === this.value
         contentEnd.unshift(this.__getBtn(h, {
           key: 'bne',
           style,
           props: {
-            disable: this.disable || this.value >= this.max,
-            label: this.max
+            disable: this.disable,
+            flat: !active,
+            textColor: active ? this.textColor : null,
+            label: this.max,
+            noRipple: true
           },
           on: {
             click: () => this.set(this.max)
@@ -275,7 +287,7 @@ export default {
           props: {
             disable: this.disable,
             label: '…',
-            repeatTimeout: this.__getRepeatEasing()
+            repeatTimeout: this.__repeatTimeout
           },
           on: {
             click: () => this.set(pgFrom - 1)
@@ -289,7 +301,7 @@ export default {
           props: {
             disable: this.disable,
             label: '…',
-            repeatTimeout: this.__getRepeatEasing()
+            repeatTimeout: this.__repeatTimeout
           },
           on: {
             click: () => this.set(pgTo + 1)
@@ -297,12 +309,14 @@ export default {
         }))
       }
       for (let i = pgFrom; i <= pgTo; i++) {
+        const active = i === this.value
         contentMiddle.push(this.__getBtn(h, {
-          key: `${i}.${i === this.value}`,
+          key: `${i}.${active}`,
           style,
           props: {
             disable: this.disable,
-            flat: i !== this.value,
+            flat: !active,
+            textColor: active ? this.textColor : null,
             label: i,
             noRipple: true
           },
@@ -314,12 +328,12 @@ export default {
     }
 
     return h('div', {
-      staticClass: 'q-pagination',
+      staticClass: 'q-pagination row no-wrap items-center',
       'class': { disabled: this.disable }
     }, [
       contentStart,
 
-      h('div', { staticClass: 'row wrap justify-center' }, [
+      h('div', { staticClass: 'row justify-center' }, [
         contentMiddle
       ]),
 

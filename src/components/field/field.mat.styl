@@ -1,10 +1,3 @@
-.q-field
-  margin-top 16px
-  margin-bottom 8px
-  .q-if
-    margin-top 0 !important
-    margin-bottom 0 !important
-
 .q-field-icon
   width $field-icon-size
   height $field-icon-size
@@ -24,7 +17,7 @@
 .q-field-bottom
   font-size 12px
   padding-top 8px
-  color rgba(0, 0, 0, .46)
+  color $form-dark
 .q-field-no-input
   margin-top 8px
   border-top 1px solid rgba(0, 0, 0, .12)
@@ -34,7 +27,7 @@
 
 .q-field-dark
   .q-field-label, .q-field-icon, .q-field-counter, .q-field-bottom
-    color $field-dark-label-color
+    color $form-light
   .q-field-no-input
     border-top 1px solid $field-label-color
 
@@ -50,18 +43,31 @@
   .q-field-no-input
     border-top 1px solid $warning
 
-@media (max-width $breakpoint-xs-max)
+qfield-vertical()
   .q-field-label + .q-field-content
     padding-top 8px
-  .q-field-floating.q-field-no-label
+  &.q-field-floating.q-field-no-label
     .q-field-margin
       margin-top 12px
-  .q-field-no-label .q-field-label
+  &.q-field-no-label .q-field-label
     display none
 
-@media (min-width $breakpoint-sm-min)
-  .q-field-floating
+qfield-horizontal()
+  &.q-field-floating
     .q-field-margin
       margin-top 12px
   .q-field-label + .q-field-content
     padding-top 0
+
+.q-field-vertical
+  qfield-vertical()
+.q-field-horizontal
+  qfield-horizontal()
+
+@media (max-width $breakpoint-xs-max)
+  .q-field-responsive
+    qfield-vertical()
+
+@media (min-width $breakpoint-sm-min)
+  .q-field-responsive
+    qfield-horizontal()

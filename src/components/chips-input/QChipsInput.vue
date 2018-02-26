@@ -10,11 +10,13 @@
     :warning="warning"
     :disable="disable"
     :inverted="inverted"
+    :invertedLight="invertedLight"
     :dark="dark"
     :hide-underline="hideUnderline"
     :before="before"
     :after="after"
-    :color="inverted ? frameColor || color : color"
+    :color="color"
+    :no-parent-field="noParentField"
 
     :focused="focused"
     :length="length"
@@ -25,12 +27,17 @@
     <div class="col row items-center group q-input-chips">
       <q-chip
         small
-        :closable="!disable"
+        :closable="editable"
         v-for="(label, index) in model"
-        :key="label"
-        :color="color"
+        :key="`${label}#${index}`"
+        :color="computedChipBgColor"
+        :text-color="computedChipTextColor"
+        @blur="__onInputBlur"
+        @blur.native="__onInputBlur"
         @focus="__clearTimer"
+        @focus.native="__clearTimer"
         @hide="remove(index)"
+        :tabindex="editable && focused ? 0 : -1"
       >
         {{ label }}
       </q-chip>
@@ -38,30 +45,30 @@
       <input
         ref="input"
         class="col q-input-target"
-        :class="[`text-${align}`]"
+        :class="alignClass"
         v-model="input"
 
-        :name="name"
         :placeholder="inputPlaceholder"
         :disabled="disable"
-        :max-length="maxLength"
+        :readonly="readonly"
+        v-bind="$attrs"
 
         @focus="__onFocus"
         @blur="__onInputBlur"
-        @keydown="__handleKey"
+        @keydown="__handleKeyDown"
         @keyup="__onKeyup"
       />
     </div>
 
     <q-icon
-      v-if="!disable"
-      name="send"
+      v-if="editable"
+      :name="computedAddIcon"
       slot="after"
-      class="q-if-control self-end"
+      class="q-if-control"
       :class="{invisible: !input.length}"
-      @mousedown="__clearTimer"
-      @touchstart="__clearTimer"
-      @click="add()"
+      @mousedown.native="__clearTimer"
+      @touchstart.native="__clearTimer"
+      @click.native="add()"
     ></q-icon>
   </q-input-frame>
 </template>
@@ -71,6 +78,7 @@ import FrameMixin from '../../mixins/input-frame'
 import InputMixin from '../../mixins/input'
 import { QInputFrame } from '../input-frame'
 import { QChip } from '../chip'
+import { getEventKey, stopAndPrevent } from '../../utils/event'
 
 export default {
   name: 'q-chips-input',
@@ -84,22 +92,20 @@ export default {
       type: Array,
       required: true
     },
-    frameColor: String
+    chipsColor: String,
+    chipsBgColor: String,
+    readonly: Boolean,
+    addIcon: String
   },
   data () {
     return {
       input: '',
-      model: [...this.value]
+      model: this.value
     }
   },
   watch: {
     value (v) {
-      if (Array.isArray(v)) {
-        this.model = [...v]
-      }
-      else {
-        this.model = []
-      }
+      this.model = this.value
     }
   },
   computed: {
@@ -107,13 +113,44 @@ export default {
       return this.model
         ? this.model.length
         : 0
+    },
+    computedAddIcon () {
+      return this.addIcon || this.$q.icon.chipsInput.add
+    },
+    computedChipTextColor () {
+      if (this.chipsColor) {
+        return this.chipsColor
+      }
+      if (this.isInvertedLight) {
+        return this.invertedLight ? this.color : 'white'
+      }
+      if (this.isInverted) {
+        return this.invertedLight ? 'grey-10' : this.color
+      }
+      return this.dark
+        ? this.color
+        : 'white'
+    },
+    computedChipBgColor () {
+      if (this.chipsBgColor) {
+        return this.chipsBgColor
+      }
+      if (this.isInvertedLight) {
+        return this.invertedLight ? 'grey-10' : this.color
+      }
+      if (this.isInverted) {
+        return this.invertedLight ? this.color : 'white'
+      }
+      return this.dark
+        ? 'white'
+        : this.color
     }
   },
   methods: {
     add (value = this.input) {
       clearTimeout(this.timer)
       this.focus()
-      if (!this.disable && value) {
+      if (this.editable && value && !this.model.includes(value)) {
         this.model.push(value)
         this.$emit('input', this.model)
         this.input = ''
@@ -122,7 +159,7 @@ export default {
     remove (index) {
       clearTimeout(this.timer)
       this.focus()
-      if (!this.disable && index >= 0 && index < this.length) {
+      if (this.editable && index >= 0 && index < this.length) {
         this.model.splice(index, 1)
         this.$emit('input', this.model)
       }
@@ -130,20 +167,18 @@ export default {
     __clearTimer () {
       this.$nextTick(() => clearTimeout(this.timer))
     },
-    __handleKey (e) {
-      // ENTER key
-      if (e.which === 13 || e.keyCode === 13) {
-        e.preventDefault()
-        this.add()
-      }
-      // Backspace key
-      else if (e.which === 8 || e.keyCode === 8) {
-        if (!this.input.length && this.length) {
-          this.remove(this.length - 1)
-        }
-      }
-      else {
-        this.__onKeydown(e)
+    __handleKeyDown (e) {
+      switch (getEventKey(e)) {
+        case 13: // ENTER key
+          stopAndPrevent(e)
+          return this.add()
+        case 8: // Backspace key
+          if (!this.input.length && this.length) {
+            this.remove(this.length - 1)
+          }
+          return
+        default:
+          return this.__onKeydown(e)
       }
     },
     __onClick () {

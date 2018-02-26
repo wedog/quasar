@@ -1,5 +1,6 @@
 import { QBtn } from '../btn'
 import { QSlider } from '../slider'
+import ParentFieldMixin from '../../mixins/parent-field'
 import TouchPan from '../../directives/touch-pan'
 import { stopAndPrevent } from '../../utils/event'
 import throttle from '../../utils/throttle'
@@ -9,25 +10,29 @@ import { hexToRgb, rgbToHex, rgbToHsv, hsvToRgb } from '../../utils/colors'
 
 export default {
   name: 'q-color-picker',
+  mixins: [ParentFieldMixin],
   directives: {
     TouchPan
   },
   props: {
-    value: {
+    value: [String, Object],
+    defaultValue: {
       type: [String, Object],
-      required: true
+      default: '#000'
     },
-    color: {
+    formatModel: {
       type: String,
-      default: 'primary'
+      default: 'auto',
+      validator: v => ['auto', 'hex', 'rgb', 'hexa', 'rgba'].includes(v)
     },
     disable: Boolean,
-    readonly: Boolean
+    readonly: Boolean,
+    dark: Boolean
   },
   data () {
     return {
       view: !this.value || typeof this.value === 'string' ? 'hex' : 'rgb',
-      model: this.__parseModel(this.value),
+      model: this.__parseModel(this.value || this.defaultValue),
       inputError: {
         hex: false,
         r: false,
@@ -39,11 +44,7 @@ export default {
   watch: {
     value: {
       handler (v) {
-        if (this.avoidModelWatch) {
-          this.avoidModelWatch = false
-          return
-        }
-        const model = this.__parseModel(v)
+        const model = this.__parseModel(v || this.defaultValue)
         if (model.hex !== this.model.hex) {
           this.model = model
         }
@@ -52,23 +53,38 @@ export default {
     }
   },
   computed: {
+    forceHex () {
+      return this.formatModel === 'auto'
+        ? null
+        : this.formatModel.indexOf('hex') > -1
+    },
+    forceAlpha () {
+      return this.formatModel === 'auto'
+        ? null
+        : this.formatModel.indexOf('a') > -1
+    },
     isHex () {
       return typeof this.value === 'string'
     },
-    isRgb () {
-      return !this.isHex
+    isOutputHex () {
+      return this.forceHex !== null
+        ? this.forceHex
+        : this.isHex
     },
     editable () {
       return !this.disable && !this.readonly
     },
     hasAlpha () {
+      if (this.forceAlpha !== null) {
+        return this.forceAlpha
+      }
       return this.isHex
         ? this.value.length > 7
-        : this.value.a !== void 0
+        : this.value && this.value.a !== void 0
     },
-    swatchStyle () {
+    swatchColor () {
       return {
-        backgroundColor: `rgba(${this.model.r},${this.model.g},${this.model.b},${this.model.a / 100})`
+        backgroundColor: `rgba(${this.model.r},${this.model.g},${this.model.b},${(this.model.a === void 0 ? 100 : this.model.a) / 100})`
       }
     },
     saturationStyle () {
@@ -88,9 +104,6 @@ export default {
         inp.push('a')
       }
       return inp
-    },
-    rgbColor () {
-      return `rgb(${this.model.r},${this.model.g},${this.model.b})`
     }
   },
   created () {
@@ -99,7 +112,7 @@ export default {
   render (h) {
     return h('div', {
       staticClass: 'q-color',
-      'class': { disabled: this.disable }
+      'class': { disabled: this.disable, 'q-color-dark': this.dark }
     }, [
       this.__getSaturation(h),
       this.__getSliders(h),
@@ -119,6 +132,10 @@ export default {
         directives: this.editable
           ? [{
             name: 'touch-pan',
+            modifiers: {
+              prevent: true,
+              stop: true
+            },
             value: this.__saturationPan
           }]
           : null
@@ -138,9 +155,10 @@ export default {
         staticClass: 'q-color-sliders row items-center'
       }, [
         h('div', {
-          staticClass: 'q-color-swatch q-mt-sm q-ml-sm q-mb-sm non-selectable overflow-hidden',
-          style: this.swatchStyle
-        }),
+          staticClass: 'q-color-swatch q-mt-sm q-ml-md q-mb-sm non-selectable overflow-hidden'
+        }, [
+          h('div', { style: this.swatchColor, staticClass: 'fit' })
+        ]),
         h('div', { staticClass: 'col q-pa-sm' }, [
           h('div', { staticClass: 'q-color-hue non-selectable' }, [
             h(QSlider, {
@@ -154,7 +172,7 @@ export default {
               },
               on: {
                 input: this.__onHueChange,
-                change: val => { this.__onHueChange(val, true) }
+                dragend: val => this.__onHueChange(val, true)
               }
             })
           ]),
@@ -170,12 +188,8 @@ export default {
                   readonly: !this.editable
                 },
                 on: {
-                  input: value => {
-                    this.__onNumericChange({ target: { value } }, 'a', 100)
-                  },
-                  change: value => {
-                    this.__onNumericChange({ target: { value } }, 'a', 100, true)
-                  }
+                  input: value => this.__onNumericChange({ target: { value } }, 'a', 100),
+                  dragend: value => this.__onNumericChange({ target: { value } }, 'a', 100, true)
                 }
               })
             ])
@@ -184,31 +198,28 @@ export default {
       ])
     },
     __getNumericInputs (h) {
-      return this.inputsArray.map(type => {
-        const max = type === 'a' ? 100 : 255
+      return this.inputsArray.map(formatModel => {
+        const max = formatModel === 'a' ? 100 : 255
         return h('div', { staticClass: 'col q-color-padding' }, [
           h('input', {
             attrs: {
               type: 'number',
               min: 0,
               max,
-              readonly: !this.editable
+              readonly: !this.editable,
+              tabindex: this.disable ? 0 : -1
             },
-            staticClass: 'full-width text-center q-color-number',
+            staticClass: 'full-width text-center q-no-input-spinner',
             domProps: {
-              value: Math.round(this.model[type])
+              value: Math.round(this.model[formatModel])
             },
             on: {
-              input: evt => {
-                this.__onNumericChange(evt, type, max)
-              },
-              blur: evt => {
-                this.__onNumericChange(evt, type, max, true)
-              }
+              input: evt => this.__onNumericChange(evt, formatModel, max),
+              blur: evt => this.editable && this.__onNumericChange(evt, formatModel, max, true)
             }
           }),
           h('div', { staticClass: 'q-color-label text-center uppercase' }, [
-            type
+            formatModel
           ])
         ])
       })
@@ -219,10 +230,13 @@ export default {
           h('div', { staticClass: 'col' }, [
             h('input', {
               domProps: { value: this.model.hex },
-              attrs: { readonly: !this.editable },
+              attrs: {
+                readonly: !this.editable,
+                tabindex: this.disable ? 0 : -1
+              },
               on: {
                 input: this.__onHexChange,
-                blur: evt => { console.log('blur'); this.__onHexChange(evt, true) }
+                blur: evt => this.editable && this.__onHexChange(evt, true)
               },
               staticClass: 'full-width text-center uppercase'
             }),
@@ -241,7 +255,7 @@ export default {
           h(QBtn, {
             props: {
               flat: true,
-              color: 'grey-7'
+              disable: this.disable
             },
             on: {
               click: this.__nextInputView
@@ -299,7 +313,7 @@ export default {
       this.model.h = h
       this.__update(val, rgbToHex(val), change)
     },
-    __onNumericChange (evt, type, max, change) {
+    __onNumericChange (evt, formatModel, max, change) {
       let val = Number(evt.target.value)
       if (isNaN(val)) {
         return
@@ -314,14 +328,14 @@ export default {
       }
 
       const rgb = {
-        r: type === 'r' ? val : this.model.r,
-        g: type === 'g' ? val : this.model.g,
-        b: type === 'b' ? val : this.model.b,
+        r: formatModel === 'r' ? val : this.model.r,
+        g: formatModel === 'g' ? val : this.model.g,
+        b: formatModel === 'b' ? val : this.model.b,
         a: this.hasAlpha
-          ? (type === 'a' ? val : this.model.a)
+          ? (formatModel === 'a' ? val : this.model.a)
           : void 0
       }
-      if (type !== 'a') {
+      if (formatModel !== 'a') {
         const hsv = rgbToHsv(rgb)
         this.model.h = hsv.h
         this.model.s = hsv.s
@@ -352,39 +366,32 @@ export default {
       this.__update(rgb, hex, change)
     },
     __update (rgb, hex, change) {
+      const value = this.isOutputHex ? hex : rgb
+
       // update internally
       this.model.hex = hex
       this.model.r = rgb.r
       this.model.g = rgb.g
       this.model.b = rgb.b
-      if (this.hasAlpha) {
-        this.model.a = rgb.a
-      }
-
-      // avoid recomputing
-      this.avoidModelWatch = true
+      this.model.a = this.hasAlpha ? rgb.a : void 0
 
       // emit new value
-      const val = this.isHex ? hex : rgb
-
-      this.$emit('input', val)
-      if (change) {
-        this.$emit('change', val)
-      }
+      this.$emit('input', value)
+      this.$nextTick(() => {
+        if (change && JSON.stringify(value) !== JSON.stringify(this.value)) {
+          this.$emit('change', value)
+        }
+      })
     },
     __nextInputView () {
       this.view = this.view === 'hex' ? 'rgba' : 'hex'
     },
     __parseModel (v) {
-      let model
-      if (typeof v === 'string') {
-        model = hexToRgb(v)
-        model.hex = v
+      let model = typeof v === 'string' ? hexToRgb(v) : clone(v)
+      if (this.forceAlpha === (model.a === void 0)) {
+        model.a = this.forceAlpha ? 100 : void 0
       }
-      else {
-        model = clone(v)
-        model.hex = rgbToHex(v)
-      }
+      model.hex = rgbToHex(model)
       return extend({ a: 100 }, model, rgbToHsv(model))
     },
 
@@ -415,7 +422,9 @@ export default {
     },
     __dragStop (event) {
       stopAndPrevent(event.evt)
-      this.saturationDragging = false
+      setTimeout(() => {
+        this.saturationDragging = false
+      }, 100)
       this.__onSaturationChange(
         event.position.left,
         event.position.top,
@@ -429,9 +438,13 @@ export default {
       )
     },
     __saturationClick (evt) {
+      if (this.saturationDragging) {
+        return
+      }
       this.__onSaturationChange(
         evt.pageX - window.pageXOffset,
-        evt.pageY - window.pageYOffset
+        evt.pageY - window.pageYOffset,
+        true
       )
     }
   }

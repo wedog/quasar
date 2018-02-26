@@ -3,15 +3,8 @@
 
 .q-if
   min-height 32px
-  margin-top 16px
-  margin-bottom 8px
+  outline 0
   padding-bottom 8px
-  color $primary
-
-  /* Remove browser controller for input type="number" */
-  input::-webkit-outer-spin-button,
-  input::-webkit-inner-spin-button // @stylint ignore
-    -webkit-appearance none
 
   &:not(.q-if-hide-underline):not(.q-if-inverted)
     &:before, &:after
@@ -24,7 +17,7 @@
     background currentColor
   &:before
     height 1px
-    color rgba(0, 0, 0, .12)
+    color $light
     transform scaleY(1)
   &:after
     width 0
@@ -32,10 +25,16 @@
     color currentColor
 
   &:hover:before
-    color rgba(0, 0, 0, .36)
+    color black
 
   .group
     margin -5px
+    &:not(:first-child)
+      margin-top 0
+
+.q-if-hide-underline:not(.q-if-inverted)
+  min-height 24px
+  padding-bottom 0
 
 .q-if-focusable
   outline 0
@@ -43,15 +42,15 @@
 
 .q-if-inner
   min-height 24px !important
+  align-items center
 
 .q-if-has-label
   min-height 41px
   .q-if-inner
-    min-height 34px !important
-    padding-top 15px
+    min-height 36px !important
+    padding-top 12px
 
 .q-if-label
-  color rgba(0, 0, 0, .46)
   pointer-events none
   user-select none
   top 15px
@@ -64,7 +63,6 @@
 
 .q-if-addon
   pointer-events none
-  color rgba(0, 0, 0, .46)
   opacity 0
 .q-if-addon-left
   padding-right 1px
@@ -75,48 +73,61 @@
 
 .q-if-control
   cursor pointer
-  margin-left 4px
-  color rgba(0, 0, 0, .54)
   font-size 24px
+  align-self flex-end
+  &.q-icon
+    cursor pointer
   &:hover
     opacity .7
 .q-if-control-before
   margin-left 0
   margin-right 4px
 
-.q-if-dark
-  &:before, .q-if-label, .q-if-control
-    color rgba(255, 255, 255, .7)
-  &:hover:before, .q-if-addon
-    color rgba(255, 255, 255, .9)
-
-.q-if-focused
-  &:after
-    width 100%
-  .q-if-label
-    color currentColor
+.q-if-label, .q-if-addon, .q-if-control
+  color $form-dark
 
 .q-if-inverted
   min-height 38px
   border-radius 2px
-  padding-top 8px
-  padding-left 8px
-  padding-right 8px
+  padding 8px
   box-shadow $shadow-1
-  .q-if-control
+
+  .q-input-target
+    color inherit
+  .q-if-label, .q-if-addon,  .q-if-control
+    color #ddd
+
+div.q-input-target
+  min-width 35px
+
+.q-if-dark
+  &:hover:before
     color white
+  &:not(.q-if-inverted-light)
+    .q-input-target
+      color white
+
+.q-if-inverted-light
+  .q-if-label, .q-if-addon,  .q-if-control
+    color #656565
+
+.q-if-focused
+  &:after
+    width 100%
+  .q-if-label, .q-if-addon, .q-if-control
+    color currentColor !important
 
 .q-if-error
-  &:before, &:after, &:not(.q-if-inverted) .q-if-label, .q-if-addon
+  &:before, &:after, &:not(.q-if-inverted) .q-if-label
     color $negative
   &:hover:before
-    color lighten($negative, 26%)
+    color lighten($negative, 46%)
 
 .q-if-warning
-  &:before, &:after, &:not(.q-if-inverted) .q-if-label, .q-if-addon
+  &:before, &:after, &:not(.q-if-inverted) .q-if-label
     color $warning
   &:hover:before
-    color lighten($warning, 26%)
+    color lighten($warning, 46%)
 
 .q-if-disabled
   cursor not-allowed !important
@@ -129,3 +140,5 @@
     background-position bottom
     background-size 3px 1px
     background-repeat repeat-x
+  &.q-if-dark:before
+    background-image linear-gradient(90deg, rgba(255, 255, 255, .7) 0, rgba(255, 255, 255, .7) 33%, transparent 0)

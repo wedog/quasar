@@ -1,4 +1,5 @@
 import { QSpinner } from '../components/spinner'
+import { isSSR } from './platform'
 
 let
   vm,
@@ -19,13 +20,15 @@ const Loading = {
     spinner = QSpinner,
     customClass = false
   } = {}) {
+    if (isSSR) { return }
+
     props.spinner = spinner
     props.message = message
     props.spinnerSize = spinnerSize
     props.spinnerColor = spinnerColor
     props.messageColor = messageColor
 
-    if (customClass && typeof customClass === 'string') {
+    if (typeof customClass === 'string') {
       props.customClass = customClass.trim()
     }
 

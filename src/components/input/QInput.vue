@@ -10,14 +10,16 @@
     :warning="warning"
     :disable="disable"
     :inverted="inverted"
+    :invertedLight="invertedLight"
     :dark="dark"
     :hide-underline="hideUnderline"
     :before="before"
     :after="after"
     :color="color"
+    :no-parent-field="noParentField"
 
     :focused="focused"
-    :length="length"
+    :length="autofilled + length"
     :top-addons="isTextarea"
 
     @click="__onClick"
@@ -39,11 +41,9 @@
           ref="input"
           class="col q-input-target q-input-area"
 
-          :name="name"
           :placeholder="inputPlaceholder"
           :disabled="disable"
           :readonly="readonly"
-          :maxlength="maxLength"
           v-bind="$attrs"
 
           :value="model"
@@ -60,14 +60,13 @@
     <input
       v-else
       ref="input"
-      class="col q-input-target"
-      :class="[`text-${align}`]"
+      class="col q-input-target q-no-input-spinner"
+      :class="inputClasses"
 
-      :name="name"
       :placeholder="inputPlaceholder"
       :disabled="disable"
       :readonly="readonly"
-      :maxlength="maxLength"
+      :step="computedStep"
       v-bind="$attrs"
 
       :type="inputType"
@@ -78,10 +77,12 @@
       @blur="__onInputBlur"
       @keydown="__onKeydown"
       @keyup="__onKeyup"
+
+      @animationstart="__onAnimationStart"
     />
 
     <q-icon
-      v-if="isPassword && !noPassToggle && length"
+      v-if="!disable && isPassword && !noPassToggle && length"
       slot="after"
       :name="$q.icon.input[showPass ? 'showPass' : 'hidePass']"
       class="q-if-control"
@@ -91,7 +92,7 @@
     ></q-icon>
 
     <q-icon
-      v-if="isNumber && !noNumberToggle && length"
+      v-if="editable && keyboardToggle"
       slot="after"
       :name="$q.icon.input[showNumber ? 'showNumber' : 'hideNumber']"
       class="q-if-control"
@@ -103,7 +104,7 @@
     <q-icon
       v-if="editable && clearable && length"
       slot="after"
-      :name="$q.icon.input.clear"
+      :name="$q.icon.input[`clear${isInverted ? 'Inverted' : ''}`]"
       class="q-if-control"
       @mousedown.native="__clearTimer"
       @touchstart.native="__clearTimer"
@@ -147,13 +148,17 @@ export default {
       default: 'text',
       validator: t => inputTypes.includes(t)
     },
-    minRows: Number,
+    align: {
+      type: String,
+      validator: v => ['left', 'center', 'right'].includes(v)
+    },
     clearable: Boolean,
     noPassToggle: Boolean,
-    noNumberToggle: Boolean,
+    numericKeyboardToggle: Boolean,
     readonly: Boolean,
 
-    maxDecimals: Number,
+    decimals: Number,
+    step: Number,
     upperCase: Boolean
   },
   data () {
@@ -161,24 +166,24 @@ export default {
       showPass: false,
       showNumber: true,
       model: this.value,
+      watcher: null,
+      autofilled: false,
       shadow: {
         val: this.model,
         set: this.__set,
         loading: false,
-        hasFocus: () => {
-          return document.activeElement === this.$refs.input
-        },
+        watched: false,
+        isDark: () => this.dark,
+        hasFocus: () => document.activeElement === this.$refs.input,
         register: () => {
-          this.watcher = this.$watch('model', val => {
-            this.shadow.val = val
-          })
+          this.shadow.watched = true
+          this.__watcherRegister()
         },
         unregister: () => {
-          this.watcher()
+          this.shadow.watched = false
+          this.__watcherUnregister()
         },
-        getEl: () => {
-          return this.$refs.input
-        }
+        getEl: () => this.$refs.input
       }
     }
   },
@@ -186,6 +191,9 @@ export default {
     value (v) {
       this.model = v
       this.isNumberError = false
+    },
+    isTextarea (v) {
+      this[v ? '__watcherRegister' : '__watcherUnregister']()
     }
   },
   provide () {
@@ -211,21 +219,33 @@ export default {
         return this.$attrs.pattern || '[0-9]*'
       }
     },
+    keyboardToggle () {
+      return this.$q.platform.is.mobile &&
+        this.isNumber &&
+        this.numericKeyboardToggle &&
+        length
+    },
     inputType () {
       if (this.isPassword) {
-        return this.showPass ? 'text' : 'password'
+        return this.showPass && this.editable ? 'text' : 'password'
       }
       return this.isNumber
-        ? (this.showNumber ? 'number' : 'text')
+        ? (this.showNumber || !this.editable ? 'number' : 'text')
         : this.type
+    },
+    inputClasses () {
+      const classes = []
+      this.align && classes.push(`text-${this.align}`)
+      this.autofilled && classes.push('q-input-autofill')
+      return classes
     },
     length () {
       return this.model !== null && this.model !== undefined
         ? ('' + this.model).length
         : 0
     },
-    editable () {
-      return !this.disable && !this.readonly
+    computedStep () {
+      return this.step || (this.decimals ? 10 ** -this.decimals : 'any')
     }
   },
   methods: {
@@ -239,41 +259,63 @@ export default {
       clearTimeout(this.timer)
       this.focus()
     },
-    clear () {
-      clearTimeout(this.timer)
-      this.focus()
-      if (this.editable) {
-        this.model = this.isNumber ? null : ''
-        this.$emit('input', this.model)
-      }
-    },
 
     __clearTimer () {
       this.$nextTick(() => clearTimeout(this.timer))
     },
 
-    __set (e) {
-      let val = e.target ? e.target.value : e
+    __onAnimationStart (e) {
+      if (e.animationName.indexOf('webkit-autofill-') === 0) {
+        const value = e.animationName === 'webkit-autofill-on'
+        if (value !== this.autofilled) {
+          e.value = this.autofilled = value
+          e.el = this
+          return this.$emit('autofill', e)
+        }
+      }
+    },
+
+    __setModel (val) {
+      clearTimeout(this.timer)
+      this.focus()
+      this.__set(val || (this.isNumber ? null : ''), true)
+    },
+    __set (e, forceUpdate) {
+      let val = e && e.target ? e.target.value : e
 
       if (this.isNumber) {
+        const forcedValue = val
         val = parseFloat(val)
         if (isNaN(val)) {
           this.isNumberError = true
+          if (forceUpdate) {
+            this.$emit('input', forcedValue)
+            this.$nextTick(() => {
+              if (JSON.stringify(forcedValue) !== JSON.stringify(this.value)) {
+                this.$emit('change', forcedValue)
+              }
+            })
+          }
           return
         }
         this.isNumberError = false
-        if (Number.isInteger(this.maxDecimals)) {
-          val = parseFloat(val.toFixed(this.maxDecimals))
+        if (Number.isInteger(this.decimals)) {
+          val = parseFloat(val.toFixed(this.decimals))
         }
       }
       else if (this.upperCase) {
         val = val.toUpperCase()
       }
 
-      if (val !== this.model) {
-        this.$emit('input', val)
-      }
       this.model = val
+      this.$emit('input', val)
+      if (forceUpdate) {
+        this.$nextTick(() => {
+          if (JSON.stringify(val) !== JSON.stringify(this.value)) {
+            this.$emit('change', val)
+          }
+        })
+      }
     },
     __updateArea () {
       const shadow = this.$refs.shadow
@@ -282,19 +324,39 @@ export default {
         const max = this.maxHeight || h
         this.$refs.input.style.minHeight = `${between(h, 19, max)}px`
       }
+    },
+    __watcher (value) {
+      if (this.isTextarea) {
+        this.__updateArea(value)
+      }
+      if (this.shadow.watched) {
+        this.shadow.val = value
+      }
+    },
+    __watcherRegister () {
+      if (!this.watcher) {
+        this.watcher = this.$watch('model', this.__watcher)
+      }
+    },
+    __watcherUnregister (forceUnregister) {
+      if (
+        this.watcher &&
+        (forceUnregister || (!this.isTextarea && !this.shadow.watched))
+      ) {
+        this.watcher()
+        this.watcher = null
+      }
     }
   },
   mounted () {
     this.__updateArea = frameDebounce(this.__updateArea)
     if (this.isTextarea) {
       this.__updateArea()
-      this.watcher = this.$watch('model', this.__updateArea)
+      this.__watcherRegister()
     }
   },
   beforeDestroy () {
-    if (this.watcher !== void 0) {
-      this.watcher()
-    }
+    this.__watcherUnregister(true)
   }
 }
 </script>

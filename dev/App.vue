@@ -1,14 +1,15 @@
 <template>
-  <q-app>
-    <q-transition enter="fadeIn" leave="fadeOut" mode="out-in" :duration="300" @leave="resetScroll">
+  <div class="q-app">
+    <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut" mode="out-in" :duration="300" @leave="resetScroll">
       <router-view></router-view>
-    </q-transition>
+    </transition>
     <q-ajax-bar ref="bar" />
     <div
-      style="padding: 0px 10px; right: 10px; bottom: 100px"
+      style="padding: 0px 10px; right: 10px; bottom: 100px; padding: 5px; border-radius: 5px;"
       class="bg-white shadow-4 fixed z-top"
     >
       <q-select
+        hide-underline
         stack-label="I18n"
         :options="[
           { label: 'English (US)', value: 'en-us' }
@@ -24,10 +25,12 @@
           ,{ label: 'Russian', value: 'ru' }
           ,{ label: 'Ukrainian', value: 'uk' }
           ,{ label: 'Polish', value: 'pl' }
+          ,{ label: 'Hebrew', value: 'he' }
         ]"
         v-model="lang"
       />
       <q-select
+        hide-underline
         stack-label="Icon set"
         :options="[
           { label: 'Material', value: 'material' }
@@ -38,7 +41,7 @@
         v-model="iconSet"
       />
     </div>
-  </q-app>
+  </div>
 </template>
 
 <script>
@@ -77,12 +80,11 @@ export default {
 }
 </script>
 
-<style lang="stylus" src="quasar-css"></style>
-
 <style lang="stylus">
 p.caption
   margin 35px 0
   padding 12px 0 12px 12px
   border-left 4px solid #027be3
   font-weight bold
+  margin-left 10px
 </style>

@@ -1,7 +1,6 @@
 import {
   positionValidator,
   offsetValidator,
-  getTransformProperties,
   parsePosition,
   setPosition
 } from '../../utils/popup'
@@ -10,6 +9,7 @@ import { getScrollTarget } from '../../utils/scroll'
 import { width, viewport } from '../../utils/dom'
 import EscapeKey from '../../utils/escape-key'
 import ModelToggleMixin from '../../mixins/model-toggle'
+import { listenOpts } from '../../utils/event'
 
 export default {
   name: 'q-popover',
@@ -48,9 +48,6 @@ export default {
     }
   },
   computed: {
-    transformCSS () {
-      return getTransformProperties({selfOrigin: this.selfOrigin})
-    },
     anchorOrigin () {
       return parsePosition(this.anchor)
     },
@@ -60,12 +57,13 @@ export default {
   },
   render (h) {
     return h('div', {
-      staticClass: 'q-popover animate-scale',
-      style: this.transformCSS,
+      staticClass: 'q-popover scroll',
       on: {
         click (e) { e.stopPropagation() }
       }
-    }, this.$slots.default)
+    }, [
+      this.$slots.default
+    ])
   },
   created () {
     this.__updatePosition = frameDebounce(() => { this.reposition() })
@@ -96,9 +94,9 @@ export default {
       document.body.appendChild(this.$el)
       EscapeKey.register(() => { this.hide() })
       this.scrollTarget = getScrollTarget(this.anchorEl)
-      this.scrollTarget.addEventListener('scroll', this.__updatePosition)
-      window.addEventListener('resize', this.__updatePosition)
-      this.reposition(evt)
+      this.scrollTarget.addEventListener('scroll', this.__updatePosition, listenOpts.passive)
+      window.addEventListener('resize', this.__updatePosition, listenOpts.passive)
+      this.reposition(evt, true)
 
       clearTimeout(this.timer)
       this.timer = setTimeout(() => {
@@ -117,30 +115,34 @@ export default {
 
       this.hide(evt)
     },
-    __hide (evt) {
+    __hide () {
       clearTimeout(this.timer)
 
       document.body.removeEventListener('click', this.__bodyHide, true)
       document.body.removeEventListener('touchstart', this.__bodyHide, true)
-      this.scrollTarget.removeEventListener('scroll', this.__updatePosition)
-      window.removeEventListener('resize', this.__updatePosition)
+      this.scrollTarget.removeEventListener('scroll', this.__updatePosition, listenOpts.passive)
+      window.removeEventListener('resize', this.__updatePosition, listenOpts.passive)
       EscapeKey.pop()
 
       document.body.removeChild(this.$el)
       this.hidePromise && this.hidePromiseResolve()
     },
-    reposition (event) {
+    reposition (event, animate) {
       this.$nextTick(() => {
         if (this.fit) {
           this.$el.style.minWidth = width(this.anchorEl) + 'px'
         }
-        const { top } = this.anchorEl.getBoundingClientRect()
-        const { height } = viewport()
+        const
+          { top } = this.anchorEl.getBoundingClientRect(),
+          { height } = viewport()
+
         if (top < 0 || top > height) {
           return this.hide()
         }
+
         setPosition({
           event,
+          animate,
           el: this.$el,
           offset: this.offset,
           anchorEl: this.anchorEl,

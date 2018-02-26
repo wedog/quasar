@@ -2,7 +2,7 @@ var
   path = require('path'),
   stylus = require('stylus'),
   shell = require('shelljs'),
-  rtlcss = require('rtlcss'),
+  rtl = require('postcss-rtl'),
   postcss = require('postcss'),
   cssnano = require('cssnano'),
   autoprefixer = require('autoprefixer'),
@@ -34,23 +34,23 @@ function generateTheme (theme) {
   return prepareStylus([src].concat(deps))
     .then(code => buildUtils.writeFile(`dist/quasar.${theme}.styl`, code))
     .then(code => compileStylus(code))
-    .then(code => postcss([autoprefixer]).process(code))
+    .then(code => postcss([ autoprefixer ]).process(code, { from: src }))
     .then(code => {
       code.warnings().forEach(warn => {
         console.warn(warn.toString())
       })
-      return new Promise((resolve, reject) => resolve(code.css))
+      return code.css
     })
     .then(code => Promise.all([
-      generateStandalone(theme, code),
-      generateStandalone(theme, rtlcss.process(code), '.rtl')
+      generateUMD(theme, code),
+      postcss([ rtl({}) ]).process(code, { from: src }).then(code => generateUMD(theme, code.css, '.rtl'))
     ]))
 }
 
-function generateStandalone (theme, code, ext = '') {
-  return buildUtils.writeFile(`dist/quasar.${theme}${ext}.css`, code, true)
+function generateUMD (theme, code, ext = '') {
+  return buildUtils.writeFile(`dist/umd/quasar.${theme}${ext}.css`, code, true)
     .then(code => cssnano.process(code))
-    .then(code => buildUtils.writeFile(`dist/quasar.${theme}${ext}.min.css`, code.css, true))
+    .then(code => buildUtils.writeFile(`dist/umd/quasar.${theme}${ext}.min.css`, code.css, true))
 }
 
 function prepareStylus (src) {

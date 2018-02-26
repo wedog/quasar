@@ -1,8 +1,8 @@
 Quasar Framework is an MIT licensed open source project and completely free to use. However, the amount of effort needed to maintain and develop new features for the project is not sustainable without some financial backing.
 
-## Proudly sponsored by:
+## Platinum sponsor:
 
-[![Truelogic](http://quasar-framework.org/images/truelogic_logo.png)](http://truelogic.com)
+[![Truelogic](https://cdn.rawgit.com/rstoenescu/quasar-backers-logo/a579cb37/truelogic.png)](http://truelogic.com)
 
 # Backers
 
@@ -10,23 +10,21 @@ You can join them in supporting Quasar development by [pledging on Patreon](http
 
 ### $500
 
-It could be you!
+<a href="http://campuscloudservices.com/" target="_blank"><img src="https://cdn.rawgit.com/rstoenescu/quasar-backers-logo/a579cb37/campus-cloud-services.png" width="350px"></a>
 
 ---
 
 ### $250
 
-It could be you!
+<a href="https://www.jugglestreet.com.au/" target="_blank"><img src="https://cdn.rawgit.com/rstoenescu/quasar-backers-logo/a579cb37/juggle-street.png" width="200px"></a>
 
 ---
 
 ### $100+
 
-<a href="http://comcomservices.com/" target="_blank"><img src="http://comcomservices.com/wp-content/uploads/2016/03/Final-ComComLogo.png" width="200px"></a>
+<a href="http://comcomservices.com/" target="_blank"><img src="https://cdn.rawgit.com/rstoenescu/quasar-backers-logo/a579cb37/com-com-services.png" width="200px"></a>
 
-<a href="http://picktype.com" target="_blank"><img src="https://picktype.com/wp-content/uploads/2017/04/pt-trans-full-256.png" width="200px"></a>
-
-- Adrien M
+<a href="http://www.kalisio.com/" target="_blank"><img src="https://cdn.rawgit.com/rstoenescu/quasar-backers-logo/a579cb37/kalisio.png" width="200px"></a>
 
 ---
 
@@ -37,12 +35,13 @@ It could be you!
 - MG Papelaria (company)
 - Moacir Schmidt
 - Evan Leonardi
+- Max Matteo Staack
+- Bobby Ross
 
 ---
 
 ### $10+
 
-- Max Matteo Staack ($50)
 - Valerian Cure ($25)
 - Shawn Makinson ($25)
 - Edinei Cipriani ($25)
@@ -50,8 +49,9 @@ It could be you!
 - Carlos Tulloch ($20)
 - MSG Group ($20)
 - Pawel Rakowski ($20)
-- Jonas Viczian ($15)
+- Stephen Clarke ($20)
 - Laurent Aapro ($12)
+- Alex Tyutchev ($11)
 - Marek Urbanowicz
 - Samuel Lin
 - Matsumoto Takamasa
@@ -77,15 +77,25 @@ It could be you!
 - Rok Kogovšek
 - Josh Torres
 - Stian Mikkelsen
+- Thomas Gick
+- Alexey Telyatnikov
+- Ryan Timmins
+- Asif Mehedi
+- Sevenview Studios
+- Rus Brushkoff
+- Abdelkarim Mateos
+- Scott Brooks
+- Luca Ban
+- Borut
 
 - Ken ($5)
 - Oliver ($5)
 - Mahesh Narayanamurthi ($5)
 - Rodolfo Torres Jaime ($5)
 - Rogério Queiroz ($3)
+- Robson Martins ($2.5)
 - Joe L Wroten ($1)
 - Yasuhiro Kawagoe ($1)
-- Luca Ban ($1)
 
 ---
 
@@ -102,3 +112,4 @@ It could be you!
 - Jacob Heruty $50
 - Polaris Microsystems, L.L.C. $50
 - Jochen Geiger $50
+- Martin Beaudet $30

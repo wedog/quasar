@@ -11,13 +11,29 @@
         <q-toggle v-model="toggle" class="z-max fixed-top" />
         <q-btn color="primary" icon="assignment">
           <q-popover v-model="toggle" ref="popover1">
-            <q-list link separator class="scroll" style="min-width: 100px">
+            <q-list no-border link separator style="min-width: 100px">
               <q-item
                 v-for="n in 20"
                 :key="n"
-                @click.native="showNotify(), $refs.popover1.hide()"
+                v-close-overlay
+                @click.native="showNotify()"
               >
                 <q-item-main label="Label" sublabel="Click me" />
+              </q-item>
+            </q-list>
+          </q-popover>
+        </q-btn>
+
+        <q-btn color="primary" icon="map">
+          <q-popover>
+            <q-list no-border link separator style="min-width: 100px">
+              <q-item
+                v-for="n in 20"
+                :key="n"
+                v-close-overlay
+                @click.native="showNotify()"
+              >
+                <q-item-main label="X Label" sublabel="X Click me" />
               </q-item>
             </q-list>
           </q-popover>
@@ -33,15 +49,15 @@
           <q-card-title class="bg-primary text-center">
             <q-btn push color="orange" label="Tap Me">
               <q-popover
-                ref="popover2"
                 :anchor="anchor"
                 :self="self"
               >
-                <q-list link style="min-width: 100px">
+                <q-list no-border link style="min-width: 100px">
                   <q-item
                     v-for="n in 3"
                     :key="n"
-                    @click="showNotify(), $refs.popover2.hide()"
+                    v-close-overlay
+                    @click="showNotify()"
                   >
                     <q-item-main label="Label" />
                   </q-item>
@@ -119,7 +135,7 @@
 
       <q-btn icon="menu" color="primary" class="fixed-bottom-left" style="bottom: 10px; left: 10px;">
         <q-popover ref="popover5">
-          <q-list link separator class="scroll" style="min-width: 200px">
+          <q-list no-border link separator style="min-width: 200px">
             <q-item
               v-for="n in 20"
               :key="n"

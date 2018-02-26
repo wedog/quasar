@@ -5,13 +5,13 @@ import QTh from './QTh'
 export default {
   methods: {
     getTableHeader (h) {
-      if (this.noHeader) {
+      if (this.hideHeader) {
         return
       }
 
       const child = [ this.getTableHeaderRow(h) ]
 
-      if (this.loader) {
+      if (this.loading) {
         child.push(h('tr', { staticClass: 'q-table-progress animate-fade' }, [
           h('td', { attrs: {colspan: '100%'} }, [
             h(QProgress, {
@@ -88,7 +88,7 @@ export default {
     addTableHeaderRowMeta (data) {
       if (this.multipleSelection) {
         Object.defineProperty(data, 'selected', {
-          get: () => this.allRowsSelected,
+          get: () => this.someRowsSelected ? 'some' : this.allRowsSelected,
           set: val => {
             if (this.someRowsSelected) {
               val = false

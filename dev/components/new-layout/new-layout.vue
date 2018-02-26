@@ -8,6 +8,7 @@
           Header
           <span slot="subtitle">The Subtiiiitleeee</span>
         </q-toolbar-title>
+        <q-toggle v-model="toggle" color="amber" dark />
         <q-btn flat round dense icon="menu" @click="right = !right" />
       </q-toolbar>
       <q-toolbar>
@@ -44,7 +45,7 @@
     </q-layout-footer>
 
     <q-layout-drawer v-model="left" :overlay="leftOverlay" :behavior="leftBehavior" :breakpoint="leftBreakpoint">
-      <q-scroll-area class="fit bg-green-3 q-pa-sm" :thumb-style="{right: '4px', borderRadius: '2px', background: 'blue', opacity: .6, width: '4px'}">
+      <q-scroll-area class="fit" :thumb-style="{right: '4px', borderRadius: '2px', background: 'blue', opacity: .6, width: '4px'}">
         <q-btn @click="$router.push('/layout-quick/a')">Go to A</q-btn>
         <q-btn @click="$router.push('/layout-quick/b')">Go to B</q-btn>
         <q-btn @click="$router.push('/layout-quick/c')">Go to C</q-btn>
@@ -59,30 +60,36 @@
     </q-layout-drawer>
 
     <q-page-container>
-      <q-layout-drawer right-side v-model="right" :overlay="rightOverlay" :behavior="rightBehavior" :breakpoint="rightBreakpoint">
-        <div class="fit-min bg-orange-3 q-pa-sm">
-          <q-btn @click="$router.push('/layout-quick/a')">Go to A</q-btn>
-          <q-btn @click="$router.push('/layout-quick/b')">Go to B</q-btn>
-          <q-btn @click="$router.push('/layout-quick/c')">Go to C</q-btn>
+      <q-layout-drawer
+        side="right"
+        v-model="right"
+        :overlay="rightOverlay"
+        :behavior="rightBehavior"
+        :breakpoint="rightBreakpoint"
+        content-class="bg-orange-3 q-pa-sm"
+        :content-style="{'font-size': '16px'}"
+      >
+        <q-btn @click="$router.push('/layout-quick/a')">Go to A</q-btn>
+        <q-btn @click="$router.push('/layout-quick/b')">Go to B</q-btn>
+        <q-btn @click="$router.push('/layout-quick/c')">Go to C</q-btn>
 
-          <br><br>
+        <br><br>
 
-          <q-btn @click="$router.replace('/layout-quick/a')">Replace Go to A</q-btn>
-          <q-btn @click="$router.replace('/layout-quick/b')">Replace Go to B</q-btn>
-          <q-btn @click="$router.replace('/layout-quick/c')">Replace Go to C</q-btn>
-          <div v-for="n in 60" :key="n">{{n}} Right drawer</div>
-        </div>
+        <q-btn @click="$router.replace('/layout-quick/a')">Replace Go to A</q-btn>
+        <q-btn @click="$router.replace('/layout-quick/b')">Replace Go to B</q-btn>
+        <q-btn @click="$router.replace('/layout-quick/c')">Replace Go to C</q-btn>
+        <div v-for="n in 60" :key="n">{{n}} Right drawer</div>
       </q-layout-drawer>
 
-      <q-transition enter="fadeIn" leave="fadeOut" mode="out-in">
+      <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut" mode="out-in">
         <router-view />
-      </q-transition>
+      </transition>
     </q-page-container>
   </q-layout>
 
   <div class="fixed-center bg-amber z-fullscreen">
     <div class="row no-wrap">
-      <div class="col xs-gutter q-ma-xs">
+      <div class="col gutter-xs q-ma-xs">
         <div>
           <q-toggle v-model="header" label="Header" />
         </div>
@@ -96,13 +103,13 @@
           <q-toggle v-model="leftOverlay" label="Left as Overlay" />
         </div>
         <div>
-          <q-select v-model="leftBehavior" :options="drawerBehaviorOptions" class="no-margin" />
+          <q-select v-model="leftBehavior" :options="drawerBehaviorOptions" />
         </div>
         <div>
-          <q-input type="number" align="right" prefix="Bkpt" placeholder="Bkpt" v-model="leftBreakpoint" class="no-margin" />
+          <q-input type="number" align="right" prefix="Bkpt" placeholder="Bkpt" v-model="leftBreakpoint" />
         </div>
       </div>
-      <div class="col xs-gutter q-ma-xs">
+      <div class="col gutter-xs q-ma-xs">
         <div>
           <q-toggle v-model="footer" label="Footer" />
         </div>
@@ -116,10 +123,10 @@
           <q-toggle v-model="rightOverlay" label="Right as Overlay" />
         </div>
         <div>
-          <q-select v-model="rightBehavior" :options="drawerBehaviorOptions" class="no-margin" />
+          <q-select v-model="rightBehavior" :options="drawerBehaviorOptions" />
         </div>
         <div>
-          <q-input type="number" align="right" prefix="Bkpt" placeholder="Bkpt" v-model="rightBreakpoint" class="no-margin" />
+          <q-input type="number" align="right" prefix="Bkpt" placeholder="Bkpt" v-model="rightBreakpoint" />
         </div>
       </div>
     </div>
@@ -186,6 +193,11 @@
           </div>
         </div>
       </div>
+      <q-modal v-model="toggle" :content-css="{padding: '50px', minWidth: '50vw'}">
+        <h4>Basic Modal</h4>
+        <p v-for="n in 25" :key="`basic-${n}`">Scroll down to close</p>
+        <q-btn color="primary" @click="toggle = false">Close</q-btn>
+      </q-modal>
     </div>
   </div>
 </div>
@@ -202,6 +214,7 @@ export default {
   data () {
     const v = 'lHh Lpr fFf'
     return {
+      toggle: false,
       header: true,
       footer: true,
       left: true,

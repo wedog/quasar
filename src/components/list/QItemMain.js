@@ -1,12 +1,11 @@
-import { textStyle } from './list-utils'
+import { textStyle } from '../../mixins/item'
 
 function text (h, name, val, n) {
   n = parseInt(n, 10)
   return h('div', {
     staticClass: `q-item-${name}${n === 1 ? ' ellipsis' : ''}`,
-    style: textStyle(n),
-    domProps: { innerHTML: val }
-  })
+    style: textStyle(n)
+  }, [ val ])
 }
 
 export default {

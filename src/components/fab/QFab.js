@@ -12,7 +12,6 @@ export default {
     }
   },
   props: {
-    icon: String,
     activeIcon: String,
     direction: {
       type: String,
@@ -43,6 +42,7 @@ export default {
           push: this.push,
           flat: this.flat,
           color: this.color,
+          textColor: this.textColor,
           glossy: this.glossy
         },
         on: {

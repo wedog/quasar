@@ -6,25 +6,10 @@ export default {
   name: 'q-btn',
   mixins: [BtnMixin],
   props: {
-    value: Boolean,
-    loader: Boolean,
     percentage: Number,
     darkPercentage: Boolean,
     waitForRipple: Boolean,
     repeatTimeout: [Number, Function]
-  },
-  data () {
-    return {
-      loading: this.value || false,
-      repeated: 0
-    }
-  },
-  watch: {
-    value (val) {
-      if (this.loading !== val) {
-        this.loading = val
-      }
-    }
   },
   computed: {
     hasPercentage () {
@@ -33,85 +18,102 @@ export default {
     width () {
       return `${between(this.percentage, 0, 100)}%`
     },
-    hasNoRepeat () {
-      return this.isDisabled || !this.repeatTimeout || this.loader !== false
+    events () {
+      return this.isDisabled || !this.repeatTimeout
+        ? { click: this.click }
+        : {
+          mousedown: this.__startRepeat,
+          touchstart: this.__startRepeat,
+
+          mouseup: this.__endRepeat,
+          touchend: this.__endRepeat,
+
+          mouseleave: this.__abortRepeat,
+          touchmove: this.__abortRepeat
+        }
+    }
+  },
+  data () {
+    return {
+      repeating: false
     }
   },
   methods: {
     click (e) {
-      clearTimeout(this.timer)
-
-      if (this.isDisabled || this.repeated) {
-        this.repeated = 0
-        return
-      }
+      this.__cleanup()
 
       const trigger = () => {
-        this.removeFocus(e)
-        if (this.loader !== false || this.$slots.loading) {
-          this.loading = true
-          this.$emit('input', true)
+        if (this.isDisabled) {
+          return
         }
-        this.$emit('click', e, () => {
-          this.loading = false
-          this.$emit('input', false)
-        })
+
+        this.$emit('click', e)
       }
 
       if (this.waitForRipple && this.hasRipple) {
-        this.timer = setTimeout(trigger, 350)
+        this.timer = setTimeout(trigger, 300)
       }
       else {
         trigger()
       }
     },
-    startRepeat (e) {
-      this.repeated = 0
-
+    __cleanup () {
+      clearTimeout(this.timer)
+    },
+    __startRepeat (e) {
       const setTimer = () => {
         this.timer = setTimeout(
           trigger,
           typeof this.repeatTimeout === 'function'
-            ? this.repeatTimeout(this.repeated)
+            ? this.repeatTimeout(this.repeatCount)
             : this.repeatTimeout
         )
       }
       const trigger = () => {
-        if (this.hasNoRepeat || this.$slots.loading) {
+        if (this.isDisabled) {
           return
         }
-        this.repeated += 1
+        this.repeatCount += 1
+        e.repeatCount = this.repeatCount
         this.$emit('click', e)
         setTimer()
       }
 
+      this.repeatCount = 0
+      this.repeating = true
       setTimer()
     },
-    endRepeat () {
-      clearTimeout(this.timer)
+    __abortRepeat () {
+      this.repeating = false
+      this.__cleanup()
+    },
+    __endRepeat (e) {
+      if (!this.repeating) {
+        return
+      }
+
+      if (this.repeatCount) {
+        this.repeatCount = 0
+      }
+      else if (e.detail) {
+        this.repeating = false
+        e.repeatCount = 0
+        this.$emit('click', e)
+      }
+
+      this.__cleanup()
     }
   },
   beforeDestroy () {
-    clearTimeout(this.timer)
+    this.__cleanup()
   },
   render (h) {
-    const on = this.hasNoRepeat || this.$slots.loading
-      ? {}
-      : {
-        mousedown: this.startRepeat,
-        touchstart: this.startRepeat,
-        mouseup: this.endRepeat,
-        mouseleave: this.endRepeat,
-        touchend: this.endRepeat
-      }
-
-    on.click = this.click
-
     return h('button', {
-      staticClass: 'q-btn row inline flex-center relative-position',
+      staticClass: 'q-btn inline relative-position q-btn-item non-selectable',
       'class': this.classes,
       style: this.style,
-      on,
+      attrs: { tabindex: this.computedTabIndex },
+      on: this.events,
       directives: this.hasRipple
         ? [{
           name: 'ripple',
@@ -119,7 +121,9 @@ export default {
         }]
         : null
     }, [
-      h('div', { staticClass: 'q-focus-helper' }),
+      __THEME__ === 'ios' || this.$q.platform.is.desktop
+        ? h('div', { staticClass: 'q-focus-helper' })
+        : null,
 
       this.loading && this.hasPercentage
         ? h('div', {
@@ -130,11 +134,8 @@ export default {
         : null,
 
       h('div', {
-        staticClass: 'q-btn-inner row col flex-center',
-        'class': {
-          'no-wrap': this.noWrap,
-          'text-no-wrap': this.noWrap
-        }
+        staticClass: 'q-btn-inner row col items-center',
+        'class': this.innerClasses
       },
       this.loading
         ? [ this.$slots.loading || h(QSpinner) ]

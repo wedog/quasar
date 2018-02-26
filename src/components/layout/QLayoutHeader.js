@@ -35,8 +35,9 @@ export default {
     offset (val) {
       this.__update('offset', val)
     },
-    revealed () {
+    revealed (val) {
       this.layout.__animate()
+      this.$emit('reveal', val)
     },
     'layout.scroll' (scroll) {
       if (!this.reveal) {
@@ -76,10 +77,10 @@ export default {
         css = {}
 
       if (view[0] === 'l' && this.layout.left.space) {
-        css.marginLeft = `${this.layout.left.size}px`
+        css[`margin${this.$q.i18n.rtl ? 'Right' : 'Left'}`] = `${this.layout.left.size}px`
       }
       if (view[2] === 'r' && this.layout.right.space) {
-        css.marginRight = `${this.layout.right.size}px`
+        css[`margin${this.$q.i18n.rtl ? 'Left' : 'Right'}`] = `${this.layout.right.size}px`
       }
 
       return css
@@ -91,10 +92,10 @@ export default {
       'class': this.computedClass,
       style: this.computedStyle
     }, [
+      this.$slots.default,
       h(QResizeObservable, {
         on: { resize: this.__onResize }
-      }),
-      this.$slots.default
+      })
     ])
   },
   created () {

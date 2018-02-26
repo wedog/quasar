@@ -16,6 +16,7 @@
       <q-select color="amber" v-model="select" :options="selectListOptions"></q-select>
       <q-select inverted color="secondary" v-model="select" :options="selectListOptions"></q-select>
       <q-select inverted float-label="Float Label" color="amber" v-model="select" :options="selectListOptions"></q-select>
+      <q-select inverted float-label="Float Label" color="white" :dark="false" v-model="select" :options="selectListOptions"></q-select>
 
       <p class="caption">Single Selection with Radio</p>
       <q-field label="gogu">
@@ -35,17 +36,22 @@
         <q-select @change="onChange" @input="onInput" multiple chips v-model="multipleSelect" :options="selectListOptions" float-label="Some label" max-height="36px" clearable></q-select>
       </q-field>
       <q-field label="gogu" :count="10">
+        <q-select @change="onChange" @input="onInput" multiple chips v-model="multipleSelectColor" :options="selectListOptions" float-label="Some label" max-height="36px" clearable></q-select>
+      </q-field>
+      <q-field label="gogu" :count="10">
         <q-select @change="onChange" @input="onInput" multiple v-model="multipleSelect" :options="selectListOptions" float-label="Some label" max-height="36px"></q-select>
       </q-field>
-      <q-select inverted color="dark" frame-color="amber" multiple chips v-model="multipleSelect" :options="selectListOptions" float-label="Some label" max-height="36px"></q-select>
-      <q-select inverted color="dark" frame-color="amber" multiple chips v-model="multipleSelect" :options="selectDisabledOptions" float-label="Some label" max-height="36px"></q-select>
+      <q-select inverted inverted-light color="amber" multiple chips v-model="multipleSelect" :options="selectListOptions" float-label="Some label" max-height="36px"></q-select>
+      <q-select inverted inverted-light color="amber" multiple chips v-model="multipleSelect" :options="selectDisabledOptions" float-label="Some label" max-height="36px"></q-select>
 
       <p class="caption">Multiple Selection with Checkboxes</p>
       <q-select multiple checkbox v-model="multipleSelect" :options="selectListOptions"></q-select>
+      <q-select multiple checkbox v-model="multipleSelect" :options="selectListOptionColors"></q-select>
       <q-select multiple checkbox v-model="multipleSelect" :options="selectDisabledOptions"></q-select>
 
       <p class="caption">Multiple Selection with Toggle</p>
       <q-select multiple toggle v-model="multipleSelect" :options="selectListOptions"></q-select>
+      <q-select multiple toggle v-model="multipleSelect" :options="selectListOptionColors"></q-select>
       <q-select multiple toggle v-model="multipleSelect" :options="selectDisabledOptions"></q-select>
 
       <p class="caption">Simple</p>
@@ -63,6 +69,8 @@
 
       <p class="caption">Disabled State</p>
       <q-select disable float-label="Disabled Select" multiple v-model="multipleSelect" :options="selectOptions"></q-select>
+      <q-select disable @change="onChange" @input="onInput" multiple chips v-model="multipleSelect" :options="selectListOptions" float-label="Disabled Select" max-height="36px" clearable></q-select>
+      <q-select disable inverted inverted-light color="amber" multiple chips v-model="multipleSelect" :options="selectListOptions" float-label="Disabled Select" max-height="36px"></q-select>
 
       <p class="caption">Error State</p>
       <q-select error multiple v-model="multipleSelect" :options="selectOptions"></q-select>
@@ -74,7 +82,6 @@
           <q-item-side icon="supervisor_account" />
           <q-item-main>
             <q-select
-              class="no-margin"
               v-model="select"
               :options="selectOptions"
             />
@@ -87,7 +94,6 @@
           <q-item-main>
             <q-select
               multiple
-              class="no-margin"
               v-model="multipleSelect"
               :options="selectOptions"
             />
@@ -135,6 +141,7 @@ export default {
       select: 'fb',
       selectObject: null,
       multipleSelect: ['goog', 'twtr'],
+      multipleSelectColor: ['goog', 'twtr', 'ora'],
       multipleSelectLong: [],
       selectOptions: [
         {
@@ -211,7 +218,41 @@ export default {
           description: 'Some Java for today?',
           icon: 'mail',
           rightIcon: 'alarm',
-          value: 'ora'
+          value: 'ora',
+          color: 'red-4'
+        }
+      ],
+      selectListOptionColors: [
+        {
+          label: 'Google',
+          icon: 'email',
+          value: 'goog'
+        },
+        {
+          label: 'Facebook',
+          inset: true,
+          description: 'Enables communication',
+          value: 'fb'
+        },
+        {
+          label: 'Twitter',
+          inset: true,
+          rightIcon: 'alarm',
+          value: 'twtr'
+        },
+        {
+          label: 'Apple Inc.',
+          inset: true,
+          stamp: '10 min',
+          value: 'appl'
+        },
+        {
+          label: 'Oracle',
+          description: 'Some Java for today?',
+          icon: 'mail',
+          rightIcon: 'alarm',
+          value: 'ora',
+          color: 'red-4'
         }
       ],
       selectLongListOptions: [

@@ -1,4 +1,4 @@
-import Platform from './platform'
+import Platform, { isSSR } from './platform'
 import { ready } from '../utils/dom'
 import { rgbToHex } from '../utils/colors'
 
@@ -36,8 +36,16 @@ function setColor (hexColor) {
 }
 
 export default {
+  __installed: false,
+  install ({ $q, Vue }) {
+    if (this.__installed) { return }
+    this.__installed = true
+
+    $q.addressbarColor = this
+  },
+
   set (hexColor) {
-    if (!Platform.is.mobile || Platform.is.cordova) {
+    if (!Platform.is.mobile || Platform.is.cordova || isSSR) {
       return
     }
     if (!Platform.is.winphone && !Platform.is.safari && !Platform.is.webkit && !Platform.is.vivaldi) {

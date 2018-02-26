@@ -1,6 +1,6 @@
 <template>
   <div
-    class="q-if row no-wrap items-center relative-position"
+    class="q-if row no-wrap items-end relative-position"
     :class="classes"
     :tabindex="focusable && !disable ? 0 : -1"
     @click="__onClick"
@@ -18,7 +18,7 @@
       ></q-icon>
     </template>
 
-    <div class="q-if-inner col row no-wrap items-center relative-position">
+    <div class="q-if-inner col row no-wrap relative-position">
       <div
         v-if="hasLabel"
         class="q-if-label ellipsis full-width absolute self-start"
@@ -60,25 +60,18 @@
 </template>
 
 <script>
-import Mixin from '../../mixins/input-frame'
+import FrameMixin from '../../mixins/input-frame'
+import ParentFieldMixin from '../../mixins/parent-field'
 
 export default {
   name: 'q-input-frame',
-  mixins: [Mixin],
+  mixins: [FrameMixin, ParentFieldMixin],
   props: {
     topAddons: Boolean,
     focused: Boolean,
     length: Number,
     focusable: Boolean,
     additionalLength: Boolean
-  },
-  data () {
-    return {
-      field: {}
-    }
-  },
-  inject: {
-    __field: { default: null }
   },
   computed: {
     hasStackLabel () {
@@ -104,27 +97,24 @@ export default {
         'q-if-warning': this.hasWarning,
         'q-if-disabled': this.disable,
         'q-if-focusable': this.focusable && !this.disable,
-        'q-if-inverted': this.inverted,
-        'q-if-dark': this.dark || this.inverted,
-        'q-if-hide-underline': this.hideUnderline
+        'q-if-inverted': this.isInverted,
+        'q-if-inverted-light': this.isInvertedLight,
+        'q-if-light-color': this.lightColor,
+        'q-if-dark': this.dark,
+        'q-if-hide-underline': !this.isInverted && this.hideUnderline
       }]
 
-      const color = this.hasError ? 'negative' : this.hasWarning ? 'warning' : this.color
-      if (this.inverted) {
+      const color = this.hasError ? 'negative' : (this.hasWarning ? 'warning' : this.color)
+
+      if (this.isInverted) {
         cls.push(`bg-${color}`)
-        cls.push(`text-white`)
+        cls.push(`text-${this.isInvertedLight ? 'black' : 'white'}`)
       }
-      else {
+      else if (color) {
         cls.push(`text-${color}`)
       }
+
       return cls
-    },
-    hasError () {
-      return !!(this.field.error || this.error)
-    },
-    hasWarning () {
-      // error is the higher priority
-      return !!(!this.hasError && (this.field.warning || this.warning))
     }
   },
   methods: {
@@ -151,17 +141,6 @@ export default {
       if (item.handler) {
         item.handler(evt)
       }
-    }
-  },
-  created () {
-    if (this.__field) {
-      this.field = this.__field
-      this.field.__registerInput(this)
-    }
-  },
-  beforeDestroy () {
-    if (this.__field) {
-      this.field.__unregisterInput()
     }
   }
 }

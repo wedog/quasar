@@ -14,17 +14,20 @@ export const inline = {
     validator: modelValidator,
     required: true
   },
+  defaultValue: {
+    type: [String, Number, Date],
+    default: null
+  },
   type: {
     type: String,
     default: 'date',
-    validator (value) {
-      return ['date', 'time', 'datetime'].includes(value)
-    }
+    validator: v => ['date', 'time', 'datetime'].includes(v)
   },
   color: {
     type: String,
     default: 'primary'
   },
+  dark: Boolean,
   min: {
     validator: modelValidator,
     default: null
@@ -34,6 +37,11 @@ export const inline = {
     default: null
   },
   firstDayOfWeek: Number,
+  formatModel: {
+    type: String,
+    default: 'auto',
+    validator: v => ['auto', 'date', 'number', 'string'].includes(v)
+  },
   format24h: {
     type: [Boolean, Number],
     default: 0,
@@ -48,11 +56,7 @@ export const inline = {
 export const input = {
   format: String,
   placeholder: String,
-  clearable: Boolean,
   okLabel: String,
   cancelLabel: String,
-  defaultSelection: [String, Number, Date],
-  displayValue: String,
-  disable: Boolean,
-  readonly: Boolean
+  displayValue: String
 }

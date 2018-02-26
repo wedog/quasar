@@ -11,12 +11,6 @@ export default {
       }
     }
   },
-  props: {
-    icon: {
-      type: String,
-      required: true
-    }
-  },
   methods: {
     click (e) {
       this.__qFabClose().then(() => {
@@ -32,6 +26,7 @@ export default {
         push: this.push,
         flat: this.flat,
         color: this.color,
+        textColor: this.textColor,
         glossy: this.glossy,
         icon: this.icon
       },

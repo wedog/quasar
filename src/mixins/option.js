@@ -14,6 +14,7 @@ export default {
     keepColor: Boolean,
     dark: Boolean,
     disable: Boolean,
+    readonly: Boolean,
     noFocus: Boolean,
     checkedIcon: String,
     uncheckedIcon: String
@@ -36,20 +37,20 @@ export default {
       else {
         const color = this.keepColor
           ? this.color
-          : (this.dark ? 'light' : 'dark')
+          : (this.dark ? 'light' : 'faded')
 
         return `text-${color}`
       }
     },
     focusable () {
-      return !this.noFocus && !this.disable
+      return !this.noFocus && !this.disable && !this.readonly
     },
     tabindex () {
       return this.focusable ? 0 : -1
     }
   },
   methods: {
-    __update (val, change) {
+    __update (value) {
       const ref = this.$refs.ripple
       if (ref) {
         ref.classList.add('active')
@@ -58,15 +59,16 @@ export default {
         }, 10)
       }
 
-      this.$emit('input', val)
-      if (change) {
-        this.$emit('change', val)
-      }
+      this.$emit('input', value)
+      this.$nextTick(() => {
+        if (JSON.stringify(value) !== JSON.stringify(this.value)) {
+          this.$emit('change', value)
+        }
+      })
     },
-    __onKeydown (evt) {
-      const key = getEventKey(evt)
-      if (key === 13 /* enter */ || key === 32 /* spacebar */) {
-        this.toggle(evt, false)
+    __handleKeyDown (e) {
+      if ([13, 32].includes(getEventKey(e))) {
+        this.toggle(e, false)
       }
     }
   },
@@ -79,7 +81,7 @@ export default {
         click: this.toggle,
         focus: () => { this.$emit('focus') },
         blur: () => { this.$emit('blur') },
-        keydown: this.__onKeydown
+        keydown: this.__handleKeyDown
       },
       directives: this.$options._componentTag === 'q-toggle'
         ? [{
@@ -97,12 +99,17 @@ export default {
           attrs: { type: 'checkbox' },
           on: { change: this.toggle }
         }),
-        h('div', { staticClass: 'q-focus-helper' }),
+        this.$q.platform.is.desktop
+          ? h('div', { staticClass: 'q-focus-helper' })
+          : null,
         this.__getContent(h)
       ]),
 
       this.label
-        ? h('span', { staticClass: 'q-option-label', domProps: { innerHTML: this.label } })
+        ? h('span', {
+          staticClass: 'q-option-label',
+          domProps: { innerHTML: this.label }
+        })
         : null,
 
       this.$slots.default

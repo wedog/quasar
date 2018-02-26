@@ -4,7 +4,7 @@ export default {
     positive: 'mdi-check-circle',
     negative: 'mdi-alert',
     info: 'mdi-info',
-    warning: 'mdi-priority-high'
+    warning: 'mdi-exclamation'
   },
   arrow: {
     up: 'mdi-arrow-upward',
@@ -24,7 +24,7 @@ export default {
   search: {
     icon: 'mdi-magnify',
     clear: 'mdi-close-circle',
-    clearInverted: 'mdi-close-circle-outline'
+    clearInverted: 'mdi-close'
   },
   carousel: {
     left: 'mdi-chevron-left',
@@ -47,6 +47,9 @@ export default {
   },
   chip: {
     close: 'mdi-close-circle'
+  },
+  chipsInput: {
+    add: 'mdi-send'
   },
   collapsible: {
     icon: 'mdi-chevron-down'
@@ -75,7 +78,7 @@ export default {
     outdent: 'mdi-format-indent-decrease',
     indent: 'mdi-format-indent-increase',
     removeFormat: 'mdi-format-clear',
-    formatting: '',
+    formatting: 'mdi-format-color-text',
     fontSize: 'mdi-format-size',
     align: 'mdi-format-align-left',
     hr: 'mdi-minus',
@@ -95,7 +98,8 @@ export default {
     hidePass: 'mdi-eye-off',
     showNumber: 'mdi-keyboard',
     hideNumber: 'mdi-keyboard-close',
-    clear: 'mdi-close',
+    clear: 'mdi-close-circle',
+    clearInverted: 'mdi-close',
     dropdown: 'mdi-menu-down'
   },
   pagination: {
@@ -137,7 +141,8 @@ export default {
   },
   uploader: {
     done: 'mdi-done',
-    clear: 'mdi-close',
+    clear: 'mdi-close-circle',
+    clearInverted: 'mdi-close',
     add: 'mdi-plus',
     upload: 'mdi-cloud-upload',
     expand: 'mdi-chevron-down',

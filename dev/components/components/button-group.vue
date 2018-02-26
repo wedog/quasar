@@ -23,6 +23,18 @@
                   Third
                 </q-btn>
               </q-btn-group>
+
+              <q-btn-group :push="push" :rounded="rounded" :outline="outline" :flat="flat">
+                <q-btn color="yellow" :push="push" :rounded="rounded" :outline="outline" :flat="flat" :size="size" disable>
+                  First
+                </q-btn>
+                <q-btn color="amber" :push="push" :rounded="rounded" :outline="outline" :flat="flat" :size="size" disable>
+                  Second
+                </q-btn>
+                <q-btn color="orange" :push="push" :rounded="rounded" :outline="outline" :flat="flat" :size="size" disable>
+                  Third
+                </q-btn>
+              </q-btn-group>
             </div>
           </div>
         </div>

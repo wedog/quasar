@@ -1,7 +1,6 @@
 import EscapeKey from '../../utils/escape-key'
 import extend from '../../utils/extend'
 import ModelToggleMixin from '../../mixins/model-toggle'
-import { QTransition } from '../transition'
 
 const positions = {
   top: 'items-start justify-center with-backdrop',
@@ -49,6 +48,11 @@ let openedModalNumber = 0
 export default {
   name: 'q-modal',
   mixins: [ModelToggleMixin],
+  provide () {
+    return {
+      __qmodal: true
+    }
+  },
   props: {
     position: {
       type: String,
@@ -74,12 +78,15 @@ export default {
       type: Boolean,
       default: false
     },
+    noRouteDismiss: Boolean,
     minimized: Boolean,
     maximized: Boolean
   },
   watch: {
     $route () {
-      this.hide()
+      if (!this.noRouteDismiss) {
+        this.hide()
+      }
     }
   },
   computed: {
@@ -95,12 +102,16 @@ export default {
       }
       return cls
     },
-    modalTransition () {
+    transitionProps () {
       if (this.position) {
-        return `q-modal-${this.position}`
+        return { name: `q-modal-${this.position}` }
       }
       if (this.enterClass === void 0 && this.leaveClass === void 0) {
-        return this.transition || 'q-modal'
+        return { name: this.transition || 'q-modal' }
+      }
+      return {
+        enterActiveClass: this.enterClass,
+        leaveActiveClass: this.leaveClass
       }
     },
     modalCss () {
@@ -134,7 +145,9 @@ export default {
       const body = document.body
 
       body.appendChild(this.$el)
-      body.classList.add('with-modal')
+      if (openedModalNumber === 0) {
+        body.classList.add('with-modal')
+      }
 
       EscapeKey.register(() => {
         if (!this.noEscDismiss) {
@@ -159,10 +172,7 @@ export default {
       openedModalNumber--
 
       if (openedModalNumber === 0) {
-        const body = document.body
-
-        body.classList.remove('with-modal')
-        body.style.paddingRight = this.bodyPadding
+        document.body.classList.remove('with-modal')
       }
     }
   },
@@ -177,12 +187,8 @@ export default {
     }
   },
   render (h) {
-    return h(QTransition, {
-      props: {
-        name: this.modalTransition,
-        enter: this.enterClass,
-        leave: this.leaveClass
-      },
+    return h('transition', {
+      props: this.transitionProps,
       on: {
         afterEnter: () => {
           this.showPromise && this.showPromiseResolve()

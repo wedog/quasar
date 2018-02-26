@@ -1,14 +1,11 @@
+import { getEventKey, stopAndPrevent } from '../../utils/event'
 import { between } from '../../utils/format'
 import { QIcon } from '../icon'
 
 export default {
   name: 'q-rating',
   props: {
-    value: {
-      type: Number,
-      default: 0,
-      required: true
-    },
+    value: Number,
     max: {
       type: Number,
       default: 5
@@ -29,11 +26,13 @@ export default {
       get () {
         return this.value
       },
-      set (val) {
-        if (this.value !== val) {
-          this.$emit('input', val)
-        }
-        this.$emit('change', val)
+      set (value) {
+        this.$emit('input', value)
+        this.$nextTick(() => {
+          if (JSON.stringify(value) !== JSON.stringify(this.value)) {
+            this.$emit('change', value)
+          }
+        })
       }
     },
     editable () {
@@ -52,7 +51,8 @@ export default {
   methods: {
     set (value) {
       if (this.editable) {
-        this.model = between(parseInt(value, 10), 1, this.max)
+        const model = between(parseInt(value, 10), 1, this.max)
+        this.model = this.model === model ? 0 : model
         this.mouseModel = 0
       }
     },
@@ -63,21 +63,50 @@ export default {
     }
   },
   render (h) {
-    const child = []
+    const
+      child = [],
+      tabindex = this.editable ? 0 : -1
 
     for (let i = 1; i <= this.max; i++) {
       child.push(h(QIcon, {
         key: i,
+        ref: `rt${i}`,
         props: { name: this.icon || this.$q.icon.rating.icon },
         'class': {
           active: (!this.mouseModel && this.model >= i) || (this.mouseModel && this.mouseModel >= i),
           exselected: this.mouseModel && this.model >= i && this.mouseModel < i,
           hovered: this.mouseModel === i
         },
+        attrs: { tabindex },
         nativeOn: {
-          click: () => this.set(i),
+          click: e => {
+            e.target.blur()
+            this.set(i)
+          },
           mouseover: () => this.__setHoverValue(i),
-          mouseout: () => { this.mouseModel = 0 }
+          mouseout: () => { this.mouseModel = 0 },
+          keydown: e => {
+            switch (getEventKey(e)) {
+              case 13:
+              case 32:
+                this.set(i)
+                return stopAndPrevent(e)
+              case 37: // LEFT ARROW
+              case 40: // DOWN ARROW
+                if (this.$refs[`rt${i - 1}`]) {
+                  this.$refs[`rt${i - 1}`].$el.focus()
+                }
+                return stopAndPrevent(e)
+              case 39: // RIGHT ARROW
+              case 38: // UP ARROW
+                if (this.$refs[`rt${i + 1}`]) {
+                  this.$refs[`rt${i + 1}`].$el.focus()
+                }
+                return stopAndPrevent(e)
+            }
+          },
+          focus: () => this.__setHoverValue(i),
+          blur: () => { this.mouseModel = 0 }
         }
       }))
     }

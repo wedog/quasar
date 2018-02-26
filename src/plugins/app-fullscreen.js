@@ -1,11 +1,13 @@
+import { isSSR } from './platform'
 
 export default {
-  isCapable: null,
-  isActive: null,
+  isCapable: false,
+  isActive: false,
   __prefixes: {},
 
-  request (target = document.documentElement) {
+  request (target) {
     if (this.isCapable && !this.isActive) {
+      target = target || document.documentElement
       target[this.__prefixes.request]()
     }
   },
@@ -28,6 +30,11 @@ export default {
     if (this.__installed) { return }
     this.__installed = true
 
+    if (isSSR) {
+      $q.fullscreen = this
+      return
+    }
+
     const request = [
       'requestFullscreen',
       'msRequestFullscreen', 'mozRequestFullScreen', 'webkitRequestFullscreen'
@@ -49,21 +56,21 @@ export default {
       exit
     }
 
-    this.isActive = (document.fullscreenElement ||
+    this.isActive = !!(document.fullscreenElement ||
       document.mozFullScreenElement ||
       document.webkitFullscreenElement ||
-      document.msFullscreenElement) !== undefined
+      document.msFullscreenElement)
 
     ;[
       'onfullscreenchange',
-      'MSFullscreenChange', 'onmozfullscreenchange', 'onwebkitfullscreenchange'
+      'onmsfullscreenchange', 'onmozfullscreenchange', 'onwebkitfullscreenchange'
     ].forEach(evt => {
       document[evt] = () => {
         this.isActive = !this.isActive
       }
     })
 
-    Vue.util.defineReactive({}, 'isActive', this)
+    Vue.util.defineReactive(this, 'isActive', this.isActive)
     $q.fullscreen = this
   }
 }

@@ -1,35 +1,45 @@
 .q-btn
-  display inline-flex
-  align-items center
-  justify-content center
   outline 0
   border 0
   vertical-align middle
-  vertical-align -webkit-baseline-middle
   cursor pointer
   -webkit-appearance button
   padding $button-padding
   font-size $button-font-size
-  font-weight $button-font-weight
   text-decoration none
   color inherit
-  min-height 2.572em
   background transparent
-  box-shadow $button-shadow
   transition $button-transition
+  min-height 2.572em
+  box-shadow $button-shadow
+  font-weight $button-font-weight
   text-transform uppercase
-  .q-icon
+  .q-icon, .q-spinner
     font-size 1.4em
-  .q-spinner
-    height 1.4em
-    width 1.4em
+  // workaround for alignment/sizing change when showing loader
+  .q-btn-inner:before
+    content ''
 
   &.disabled
     opacity .7 !important
-  &:not([disabled]):active
-    box-shadow $shadow-8
-  &.full-width
-    border-radius 0 !important
+
+  &:not(.disabled):not(.q-btn-flat):not(.q-btn-outline):not(.q-btn-push)
+    &:before
+      // This places the button active raise shadow behind adjacent elements
+      // Active raise shadow will still be visible under adjacent transparent elements, this is ok and coherent with a desired transparency effect.
+      // Visible active raise shadow can be removed by specifying a background color to the button
+      // Visible active raise shadow can be removed by specifying a flat or outline button type
+      content ''
+      position absolute
+      top 0
+      right 0
+      bottom 0
+      left 0
+      border-radius inherit
+      z-index -1
+      transition $button-transition
+    &:active:before
+      box-shadow $shadow-8
 
 .q-btn-progress
   transition all .3s
@@ -45,7 +55,7 @@
   border-radius $button-border-radius
 
 .q-btn-flat, .q-btn-outline
-  box-shadow none !important
+  box-shadow none
 
 .q-btn-outline
   border 1px solid currentColor
@@ -65,16 +75,15 @@
 .q-btn-round
   border-radius 50%
   padding 0
-  box-shadow $button-shadow
   min-height 0
   height 3em
   width 3em
-  &:active
-    box-shadow $shadow-8
+  &:not(.q-btn-flat):not(.q-btn-outline)
+    box-shadow $button-shadow
 
 .q-btn-dense
-  padding $button-dense-padding
-  min-height 0
+  padding .285em
+  min-height 2em
   &.q-btn-round
     padding 0
     height 2.4em

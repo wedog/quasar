@@ -1,3 +1,5 @@
+import extend from '../../utils/extend'
+
 export default {
   props: {
     pagination: Object,
@@ -18,7 +20,7 @@ export default {
   },
   computed: {
     computedPagination () {
-      return Object.assign({}, this.innerPagination, this.pagination)
+      return extend({}, this.innerPagination, this.pagination)
     },
     firstRowIndex () {
       const { page, rowsPerPage } = this.computedPagination
@@ -28,6 +30,21 @@ export default {
       const { page, rowsPerPage } = this.computedPagination
       return page * rowsPerPage
     },
+    isFirstPage () {
+      const { page } = this.computedPagination
+      return page <= 1
+    },
+    pagesNumber () {
+      const { rowsPerPage } = this.computedPagination
+      return Math.ceil(this.computedRowsNumber / rowsPerPage)
+    },
+    isLastPage () {
+      if (this.lastRowIndex === 0) {
+        return true
+      }
+      const { page } = this.computedPagination
+      return page >= this.pagesNumber
+    },
     computedRowsPerPageOptions () {
       return this.rowsPerPageOptions.map(count => ({
         label: count === 0 ? this.$q.i18n.table.allRows : '' + count,
@@ -35,9 +52,20 @@ export default {
       }))
     }
   },
+  watch: {
+    pagesNumber (lastPage) {
+      const currentPage = this.computedPagination.page
+      if (lastPage && !currentPage) {
+        this.setPagination({ page: 1 })
+      }
+      else if (lastPage < currentPage) {
+        this.setPagination({ page: lastPage })
+      }
+    }
+  },
   methods: {
     setPagination (val) {
-      const newPagination = Object.assign({}, this.computedPagination, val)
+      const newPagination = extend({}, this.computedPagination, val)
 
       if (this.isServerSide) {
         this.requestServerInteraction({
@@ -52,9 +80,21 @@ export default {
       else {
         this.innerPagination = newPagination
       }
+    },
+    prevPage () {
+      const { page } = this.computedPagination
+      if (page > 1) {
+        this.setPagination({page: page - 1})
+      }
+    },
+    nextPage () {
+      const { page, rowsPerPage } = this.computedPagination
+      if (this.lastRowIndex > 0 && page * rowsPerPage < this.computedRowsNumber) {
+        this.setPagination({page: page + 1})
+      }
     }
   },
   created () {
-    this.$emit('update:pagination', Object.assign({}, this.computedPagination))
+    this.$emit('update:pagination', extend({}, this.computedPagination))
   }
 }

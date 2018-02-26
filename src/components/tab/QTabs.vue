@@ -1,21 +1,12 @@
 <template>
   <div
     class="q-tabs flex no-wrap"
-    :class="[
-      `q-tabs-position-${position}`,
-      `q-tabs-${inverted ? 'inverted' : 'normal'}`,
-      noPaneBorder ? 'q-tabs-no-pane-border' : '',
-      twoLines ? 'q-tabs-two-lines' : ''
-    ]"
+    :class="classes"
   >
     <div
       class="q-tabs-head row"
       ref="tabs"
-      :class="{
-        [`q-tabs-align-${align}`]: true,
-        glossy: glossy,
-        [`bg-${color}`]: !inverted && color
-      }"
+      :class="innerClasses"
     >
       <div ref="scroller" class="q-tabs-scroller row no-wrap">
         <slot name="title"></slot>
@@ -65,6 +56,7 @@
 import { width, css, cssTransform } from '../../utils/dom'
 import { debounce } from '../../utils/debounce'
 import { QIcon } from '../icon'
+import { listenOpts } from '../../utils/event'
 
 const
   scrollNavigationSpeed = 5, // in pixels
@@ -75,7 +67,8 @@ export default {
   provide () {
     return {
       data: this.data,
-      selectTab: this.selectTab
+      selectTab: this.selectTab,
+      selectTabRouter: this.selectTabRouter
     }
   },
   components: {
@@ -125,20 +118,41 @@ export default {
       this.data.inverted = v
     }
   },
+  computed: {
+    classes () {
+      return [
+        `q-tabs-position-${this.position}`,
+        `q-tabs-${this.inverted ? 'inverted' : 'normal'}`,
+        this.noPaneBorder ? 'q-tabs-no-pane-border' : '',
+        this.twoLines ? 'q-tabs-two-lines' : ''
+      ]
+    },
+    innerClasses () {
+      const cls = [ `q-tabs-align-${this.align}` ]
+      this.glossy && cls.push('glossy')
+      if (!this.inverted && this.color) {
+        cls.push(`bg-${this.color}`)
+      }
+      return cls
+    }
+  },
   methods: {
-    selectTab (name) {
-      if (this.data.tabName === name) {
+    selectTab (value) {
+      if (this.data.tabName === value) {
         return
       }
 
-      this.data.tabName = name
-      this.$emit('select', name)
+      this.data.tabName = value
+      this.$emit('select', value)
 
-      if (this.value !== name) {
-        this.$emit('input', name)
-      }
+      this.$emit('input', value)
+      this.$nextTick(() => {
+        if (JSON.stringify(value) !== JSON.stringify(this.value)) {
+          this.$emit('change', value)
+        }
+      })
 
-      const el = this.__getTabElByName(name)
+      const el = this.__getTabElByName(value)
 
       if (el) {
         this.__scrollToTab(el)
@@ -147,6 +161,36 @@ export default {
       if (__THEME__ !== 'ios') {
         this.currentEl = el
         this.__repositionBar()
+      }
+    },
+    selectTabRouter (params) {
+      const
+        { value, selectable, exact, selected, priority } = params,
+        first = !this.buffer.length,
+        existingIndex = first ? -1 : this.buffer.findIndex(t => t.value === value)
+
+      if (existingIndex > -1) {
+        const buffer = this.buffer[existingIndex]
+        exact && (buffer.exact = exact)
+        selectable && (buffer.selectable = selectable)
+        selected && (buffer.selected = selected)
+        priority && (buffer.priority = priority)
+      }
+      else {
+        this.buffer.push(params)
+      }
+
+      if (first) {
+        this.bufferTimer = setTimeout(() => {
+          let tab = this.buffer.find(t => t.exact && t.selected) ||
+            this.buffer.find(t => t.selectable && t.selected) ||
+            this.buffer.find(t => t.exact) ||
+            this.buffer.filter(t => t.selectable).sort((t1, t2) => t2.priority - t1.priority)[0] ||
+            this.buffer[0]
+
+          this.buffer.length = 0
+          this.selectTab(tab.value)
+        }, 100)
       }
     },
     __repositionBar () {
@@ -322,7 +366,10 @@ export default {
     }
   },
   created () {
+    this.timer = null
     this.scrollTimer = null
+    this.bufferTimer = null
+    this.buffer = []
     this.scrollable = !this.$q.platform.is.desktop
 
     // debounce some costly methods;
@@ -335,8 +382,8 @@ export default {
       if (!this.$refs.scroller) {
         return
       }
-      this.$refs.scroller.addEventListener('scroll', this.__updateScrollIndicator)
-      window.addEventListener('resize', this.__redraw)
+      this.$refs.scroller.addEventListener('scroll', this.__updateScrollIndicator, listenOpts.passive)
+      window.addEventListener('resize', this.__redraw, listenOpts.passive)
 
       if (this.data.tabName !== '' && this.value) {
         this.selectTab(this.value)
@@ -348,9 +395,10 @@ export default {
   },
   beforeDestroy () {
     clearTimeout(this.timer)
+    clearTimeout(this.bufferTimer)
     this.__stopAnimScroll()
-    this.$refs.scroller.removeEventListener('scroll', this.__updateScrollIndicator)
-    window.removeEventListener('resize', this.__redraw)
+    this.$refs.scroller.removeEventListener('scroll', this.__updateScrollIndicator, listenOpts.passive)
+    window.removeEventListener('resize', this.__redraw, listenOpts.passive)
     this.__redraw.cancel()
     this.__updateScrollIndicator.cancel()
   }

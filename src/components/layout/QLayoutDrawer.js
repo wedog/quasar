@@ -24,7 +24,11 @@ export default {
   },
   props: {
     overlay: Boolean,
-    rightSide: Boolean,
+    side: {
+      type: String,
+      default: 'left',
+      validator: v => ['left', 'right'].includes(v)
+    },
     breakpoint: {
       type: Number,
       default: 992
@@ -33,7 +37,11 @@ export default {
       type: String,
       validator: v => ['default', 'desktop', 'mobile'].includes(v),
       default: 'default'
-    }
+    },
+    contentStyle: Object,
+    contentClass: [String, Object, Array],
+    noSwipeOpen: Boolean,
+    noSwipeClose: Boolean
   },
   data () {
     const
@@ -109,18 +117,14 @@ export default {
       this.layout.__animate()
     },
     $route () {
-      if (this.mobileOpened) {
-        this.hide()
-        return
-      }
-      if (this.onScreenOverlay) {
+      if (this.mobileOpened || this.onScreenOverlay) {
         this.hide()
       }
     }
   },
   computed: {
-    side () {
-      return this.rightSide ? 'right' : 'left'
+    rightSide () {
+      return this.side === 'right'
     },
     offset () {
       return this.showing && !this.mobileOpened
@@ -171,7 +175,7 @@ export default {
         'on-screen': this.showing,
         'off-screen': !this.showing,
         'transition-generic': !this.inTransit,
-        'top-padding': this.fixed || this.headerSlot
+        'top-padding': true
       }
     },
     belowStyle () {
@@ -185,7 +189,7 @@ export default {
         'off-screen': !onScreen,
         'on-screen': onScreen,
         'fixed': this.fixed || !this.onLayout,
-        'top-padding': this.fixed || this.headerSlot
+        'top-padding': this.headerSlot
       }
     },
     aboveStyle () {
@@ -212,24 +216,26 @@ export default {
       return css
     },
     computedStyle () {
-      return this.mobileView ? this.belowStyle : this.aboveStyle
+      return [this.contentStyle, this.mobileView ? this.belowStyle : this.aboveStyle]
     },
     computedClass () {
-      return this.mobileView ? this.belowClass : this.aboveClass
+      return [this.contentClass, this.mobileView ? this.belowClass : this.aboveClass]
     }
   },
   render (h) {
     const child = []
 
     if (this.mobileView) {
-      child.push(h('div', {
-        staticClass: `q-layout-drawer-opener fixed-${this.side}`,
-        directives: [{
-          name: 'touch-pan',
-          modifiers: { horizontal: true },
-          value: this.__openByTouch
-        }]
-      }))
+      if (!this.noSwipeOpen) {
+        child.push(h('div', {
+          staticClass: `q-layout-drawer-opener fixed-${this.side}`,
+          directives: [{
+            name: 'touch-pan',
+            modifiers: { horizontal: true },
+            value: this.__openByTouch
+          }]
+        }))
+      }
       child.push(h('div', {
         staticClass: 'fullscreen q-layout-backdrop',
         'class': this.backdropClass,
@@ -248,7 +254,9 @@ export default {
         staticClass: `q-layout-drawer q-layout-drawer-${this.side} scroll q-layout-transition`,
         'class': this.computedClass,
         style: this.computedStyle,
-        directives: this.mobileView ? [{
+        attrs: this.$attrs,
+        listeners: this.$listeners,
+        directives: this.mobileView && !this.noSwipeClose ? [{
           name: 'touch-pan',
           modifiers: { horizontal: true },
           value: this.__closeByTouch
@@ -293,7 +301,7 @@ export default {
         return
       }
 
-      this.position = this.rightSide
+      this.position = (this.$q.i18n.rtl ? !this.rightSide : this.rightSide)
         ? Math.max(width - position, 0)
         : Math.min(0, position - width)
 
@@ -311,7 +319,8 @@ export default {
 
       const
         width = this.size,
-        position = evt.direction === this.side
+        dir = evt.direction === this.side,
+        position = (this.$q.i18n.rtl ? !dir : dir)
           ? between(evt.distance.x, 0, width)
           : 0
 
@@ -323,7 +332,7 @@ export default {
         return
       }
 
-      this.position = (this.rightSide ? 1 : -1) * position
+      this.position = (this.$q.i18n.rtl ? -1 : 1) * (this.rightSide ? 1 : -1) * position
       this.percentage = between(1 - position / width, 0, 1)
 
       if (evt.isFirst) {

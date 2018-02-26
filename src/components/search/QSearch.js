@@ -1,4 +1,3 @@
-
 import { QInput } from '../input'
 import InputMixin from '../../mixins/input'
 import FrameMixin from '../../mixins/input-frame'
@@ -14,7 +13,8 @@ export default {
       default: 300
     },
     icon: String,
-    placeholder: String
+    placeholder: String,
+    noIcon: Boolean
   },
   data () {
     return {
@@ -60,17 +60,26 @@ export default {
         : this.debounce
     },
     controlBefore () {
-      return this.before || [{
-        icon: this.icon || this.$q.icon.search.icon,
-        handler: this.focus
-      }]
+      return this.before || (
+        this.noIcon
+          ? null
+          : [{
+            icon: this.icon || this.$q.icon.search.icon,
+            handler: this.focus
+          }]
+      )
     },
     controlAfter () {
-      return this.after || [{
-        icon: this.$q.icon.search[`clear${this.inverted ? 'Inverted' : ''}`],
-        content: true,
-        handler: this.clear
-      }]
+      if (this.after) {
+        return this.after
+      }
+      if (this.editable && this.clearable) {
+        return [{
+          icon: this.$q.icon.search[`clear${this.isInverted ? 'Inverted' : ''}`],
+          content: true,
+          handler: this.clear
+        }]
+      }
     }
   },
   methods: {
@@ -88,28 +97,36 @@ export default {
         autofocus: this.autofocus,
         placeholder: this.placeholder || this.$q.i18n.label.search,
         disable: this.disable,
+        readonly: this.readonly,
         error: this.error,
         warning: this.warning,
         align: this.align,
+        noParentField: this.noParentField,
         floatLabel: this.floatLabel,
         stackLabel: this.stackLabel,
         prefix: this.prefix,
         suffix: this.suffix,
         inverted: this.inverted,
+        invertedLight: this.invertedLight,
         dark: this.dark,
         hideUnderline: this.hideUnderline,
-        maxLength: this.maxLength,
         color: this.color,
         before: this.controlBefore,
-        after: this.controlAfter
+        after: this.controlAfter,
+        clearValue: this.clearValue
       },
+      attrs: this.$attrs,
       on: {
         input: v => { this.model = v },
         focus: this.__onFocus,
         blur: this.__onBlur,
         keyup: this.__onKeyup,
         keydown: this.__onKeydown,
-        click: this.__onClick
+        click: this.__onClick,
+        clear: val => {
+          this.$emit('clear', val)
+          this.__emit()
+        }
       }
     }, [
       this.$slots.default

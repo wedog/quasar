@@ -73,11 +73,11 @@ export default {
     }
   },
   unbind (el, { modifiers }) {
-    if (shouldAbort(modifiers)) {
+    const ctx = el.__qripple
+    if (!ctx || shouldAbort(modifiers)) {
       return
     }
 
-    const ctx = el.__qripple
     el.removeEventListener('click', ctx.click, false)
     delete el.__qripple
   }

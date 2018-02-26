@@ -3,6 +3,7 @@ import { QInput } from '../input'
 import { QBtn } from '../btn'
 import { QOptionGroup } from '../option-group'
 import clone from '../../utils/clone'
+import extend from '../../utils/extend'
 
 export default {
   name: 'q-dialog',
@@ -13,12 +14,14 @@ export default {
     prompt: Object,
     options: Object,
     ok: {
-      type: [String, Boolean],
+      type: [String, Object, Boolean],
       default: true
     },
-    cancel: [String, Boolean],
+    cancel: [String, Object, Boolean],
     stackButtons: Boolean,
     preventClose: Boolean,
+    noBackdropDismiss: Boolean,
+    noEscDismiss: Boolean,
     position: String,
     color: {
       type: String,
@@ -41,29 +44,28 @@ export default {
     if (msg) {
       child.push(
         h('div', {
-          staticClass: 'modal-body modal-scroll'
+          staticClass: 'modal-body modal-message modal-scroll'
         }, [ msg ])
       )
     }
 
-    child.push(
-      h(
-        'div',
-        { staticClass: 'modal-body modal-scroll' },
-        this.hasForm
-          ? (this.prompt ? this.__getPrompt(h) : this.__getOptions(h))
-          : [ this.$slots.default ]
+    if (this.hasForm || this.$slots.body) {
+      child.push(
+        h(
+          'div',
+          { staticClass: 'modal-body modal-scroll' },
+          this.hasForm
+            ? (this.prompt ? this.__getPrompt(h) : this.__getOptions(h))
+            : [ this.$slots.body ]
+        )
       )
-    )
+    }
 
     if (this.$scopedSlots.buttons) {
       child.push(
         h('div', {
           staticClass: 'modal-buttons',
-          'class': {
-            row: !this.stackButtons,
-            column: this.stackButtons
-          }
+          'class': this.buttonClass
         }, [
           this.$scopedSlots.buttons({
             ok: this.__onOk,
@@ -73,13 +75,7 @@ export default {
       )
     }
     else if (this.ok || this.cancel) {
-      child.push(
-        h(
-          'div',
-          { staticClass: 'modal-buttons row' },
-          this.__getButtons(h)
-        )
-      )
+      child.push(this.__getButtons(h))
     }
 
     return h(QModal, {
@@ -87,8 +83,8 @@ export default {
       props: {
         value: this.value,
         minimized: true,
-        noBackdropDismiss: this.preventClose,
-        noEscDismiss: this.preventClose,
+        noBackdropDismiss: this.noBackdropDismiss || this.preventClose,
+        noEscDismiss: this.noEscDismiss || this.preventClose,
         position: this.position
       },
       on: {
@@ -102,7 +98,10 @@ export default {
             return
           }
 
-          let node = this.$refs.modal.$el.getElementsByTagName('INPUT')
+          let node = this.prompt
+            ? this.$refs.modal.$el.getElementsByTagName('INPUT')
+            : this.$refs.modal.$el.getElementsByClassName('q-option')
+
           if (node.length) {
             node[0].focus()
             return
@@ -141,6 +140,29 @@ export default {
       return this.cancel === true
         ? this.$q.i18n.label.cancel
         : this.cancel
+    },
+    buttonClass () {
+      return this.stackButtons
+        ? 'column'
+        : 'row'
+    },
+    okProps () {
+      return Object(this.ok) === this.ok
+        ? extend({
+          color: this.color,
+          label: this.$q.i18n.label.ok,
+          noRipple: true
+        }, this.ok)
+        : { color: this.color, flat: true, label: this.okLabel, noRipple: true }
+    },
+    cancelProps () {
+      return Object(this.cancel) === this.cancel
+        ? extend({
+          color: this.color,
+          label: this.$q.i18n.label.cancel,
+          noRipple: true
+        }, this.cancel)
+        : { color: this.color, flat: true, label: this.cancelLabel, noRipple: true }
     }
   },
   methods: {
@@ -194,18 +216,21 @@ export default {
 
       if (this.cancel) {
         child.push(h(QBtn, {
-          props: { color: this.color, flat: true, label: this.cancelLabel, waitForRipple: true },
+          props: this.cancelProps,
           on: { click: this.__onCancel }
         }))
       }
       if (this.ok) {
         child.push(h(QBtn, {
-          props: { color: this.color, flat: true, label: this.okLabel, waitForRipple: true },
+          props: this.okProps,
           on: { click: this.__onOk }
         }))
       }
 
-      return child
+      return h('div', {
+        staticClass: 'modal-buttons',
+        'class': this.buttonClass
+      }, child)
     },
     __onOk () {
       return this.hide().then(data => {

@@ -11,11 +11,13 @@
     :warning="warning"
     :disable="disable"
     :inverted="inverted"
+    :invertedLight="invertedLight"
     :dark="dark"
     :hide-underline="hideUnderline"
     :before="before"
     :after="after"
-    :color="frameColor || color"
+    :color="color"
+    :no-parent-field="noParentField"
 
     :focused="focused"
     focusable
@@ -25,6 +27,7 @@
     @click.native="togglePopup"
     @focus.native="__onFocus"
     @blur.native="__onBlur"
+    @keydown.native="__keyboardHandleKey"
   >
     <div
       v-if="hasChips"
@@ -32,27 +35,32 @@
       :class="alignClass"
     >
       <q-chip
-        v-for="{label, value, disable: optDisable} in selectedOptions"
-        :key="label"
+        v-for="opt in selectedOptions"
+        :key="opt.label"
         small
-        :closable="!disable && !optDisable"
-        :color="color"
+        :closable="!disable && !readonly && !opt.disable"
+        :color="__getChipBgColor(opt.color)"
+        :text-color="__getChipTextColor(opt.color)"
+        :icon="opt.icon"
+        :iconRight="opt.rightIcon"
+        :avatar="opt.avatar"
         @click.native.stop
-        @hide="__toggleMultiple(value, disable || optDisable)"
+        @hide="__toggleMultiple(opt.value, disable || opt.disable)"
       >
-        {{ label }}
+        {{ opt.label }}
       </q-chip>
     </div>
 
     <div
       v-else
-      class="col row items-center q-input-target"
-      :class="alignClass"
-      v-html="actualValue"
-    ></div>
+      class="col q-input-target ellipsis"
+      :class="fakeInputClasses"
+    >
+      {{ fakeInputValue }}
+    </div>
 
     <q-icon
-      v-if="!disable && clearable && length"
+      v-if="!disable && !readonly && clearable && length"
       slot="after"
       name="cancel"
       class="q-if-control"
@@ -63,46 +71,55 @@
     <q-popover
       ref="popover"
       fit
-      :disable="disable"
-      :offset="[0, 10]"
+      :disable="readonly || disable"
       :anchor-click="false"
       class="column no-wrap"
-      @show="__onFocus"
+      :class="dark ? 'bg-dark' : null"
+      @show="__onShow"
       @hide="__onClose"
     >
-      <q-field-reset>
-        <q-search
-          v-if="filter"
-          ref="filter"
-          v-model="terms"
-          @input="reposition"
-          :placeholder="filterPlaceholder || $q.i18n.label.filter"
-          :debounce="100"
-          :color="color"
-          icon="filter_list"
-          class="no-margin"
-          style="min-height: 50px; padding: 10px;"
-        />
-      </q-field-reset>
+      <q-search
+        v-if="filter"
+        ref="filter"
+        v-model="terms"
+        @input="reposition"
+        @keydown.native="__keyboardHandleKey"
+        :placeholder="filterPlaceholder || $q.i18n.label.filter"
+        :debounce="100"
+        :color="color"
+        :dark="dark"
+        no-parent-field
+        no-icon
+        class="col-auto"
+        style="padding: 10px;"
+      />
 
       <q-list
+        v-if="visibleOptions.length"
         :separator="separator"
+        :dark="dark"
         class="no-border scroll"
       >
         <template v-if="multiple">
           <q-item-wrapper
-            v-for="opt in visibleOptions"
+            v-for="(opt, index) in visibleOptions"
             :key="JSON.stringify(opt)"
             :cfg="opt"
             :link="!opt.disable"
-            :class="{'text-faded': opt.disable}"
+            :class="[
+              opt.disable ? 'text-faded' : 'cursor-pointer',
+              index === keyboardIndex ? 'q-select-highlight' : ''
+            ]"
             slot-replace
             @click.capture.native="__toggleMultiple(opt.value, opt.disable)"
+            @mouseenter.native="e => !opt.disable && __mouseEnterHandler(e, index)"
           >
             <q-toggle
               v-if="toggle"
               slot="right"
-              :color="color"
+              keep-color
+              :color="opt.color || color"
+              :dark="dark"
               :value="optModel[opt.index]"
               :disable="opt.disable"
               no-focus
@@ -110,7 +127,9 @@
             <q-checkbox
               v-else
               slot="left"
-              :color="color"
+              keep-color
+              :color="opt.color || color"
+              :dark="dark"
               :value="optModel[opt.index]"
               :disable="opt.disable"
               no-focus
@@ -119,18 +138,23 @@
         </template>
         <template v-else>
           <q-item-wrapper
-            v-for="opt in visibleOptions"
+            v-for="(opt, index) in visibleOptions"
             :key="JSON.stringify(opt)"
             :cfg="opt"
             :link="!opt.disable"
-            :class="{'text-faded': opt.disable}"
+            :class="[
+              opt.disable ? 'text-faded' : 'cursor-pointer',
+              index === keyboardIndex ? 'q-select-highlight' : ''
+            ]"
             slot-replace
             :active="value === opt.value"
             @click.capture.native="__singleSelect(opt.value, opt.disable)"
+            @mouseenter.native="e => !opt.disable && __mouseEnterHandler(e, index)"
           >
             <q-radio
               v-if="radio"
-              :color="color"
+              keep-color
+              :color="opt.color || color"
               slot="left"
               :value="value"
               :val="opt.value"
@@ -145,15 +169,18 @@
 </template>
 
 <script>
-import { QFieldReset } from '../field'
 import { QSearch } from '../search'
 import { QPopover } from '../popover'
 import { QList, QItemWrapper } from '../list'
 import { QCheckbox } from '../checkbox'
 import { QRadio } from '../radio'
 import { QToggle } from '../toggle'
-import SelectMixin from '../../mixins/select'
+import { QIcon } from '../icon'
+import { QInputFrame } from '../input-frame'
+import { QChip } from '../chip'
+import FrameMixin from '../../mixins/input-frame'
 import extend from '../../utils/extend'
+import KeyboardSelectionMixin from '../../mixins/keyboard-selection'
 
 function defaultFilterFn (terms, obj) {
   return obj.label.toLowerCase().indexOf(terms) > -1
@@ -161,16 +188,18 @@ function defaultFilterFn (terms, obj) {
 
 export default {
   name: 'q-select',
-  mixins: [SelectMixin],
+  mixins: [FrameMixin, KeyboardSelectionMixin],
   components: {
-    QFieldReset,
     QSearch,
     QPopover,
     QList,
     QItemWrapper,
     QCheckbox,
     QRadio,
-    QToggle
+    QToggle,
+    QIcon,
+    QInputFrame,
+    QChip
   },
   props: {
     filter: [Function, Boolean],
@@ -178,7 +207,54 @@ export default {
     autofocusFilter: Boolean,
     radio: Boolean,
     placeholder: String,
-    separator: Boolean
+    separator: Boolean,
+    value: { required: true },
+    multiple: Boolean,
+    toggle: Boolean,
+    chips: Boolean,
+    readonly: Boolean,
+    options: {
+      type: Array,
+      required: true,
+      validator: v => v.every(o => 'label' in o && 'value' in o)
+    },
+    chipsColor: String,
+    chipsBgColor: String,
+    displayValue: String,
+    clearable: Boolean,
+    clearValue: {}
+  },
+  data () {
+    return {
+      model: this.multiple && Array.isArray(this.value)
+        ? this.value.slice()
+        : this.value,
+      terms: '',
+      focused: false
+    }
+  },
+  watch: {
+    value (val) {
+      this.model = this.multiple && Array.isArray(val)
+        ? val.slice()
+        : val
+    },
+    keyboardIndex (val) {
+      if (this.$refs.popover.showing && this.keyboardMoveDirection && val > -1) {
+        this.$nextTick(() => {
+          const selected = this.$refs.popover.$el.querySelector('.q-select-highlight')
+          if (selected && selected.scrollIntoView) {
+            if (selected.scrollIntoViewIfNeeded) {
+              return selected.scrollIntoViewIfNeeded(false)
+            }
+            selected.scrollIntoView(this.keyboardMoveDirection < 0)
+          }
+        })
+      }
+    },
+    visibleOptions () {
+      this.__keyboardCalcIndex()
+    }
   },
   computed: {
     optModel () {
@@ -196,15 +272,43 @@ export default {
       }
       return opts
     },
+    keyboardMaxIndex () {
+      return this.visibleOptions.length - 1
+    },
     filterFn () {
       return typeof this.filter === 'boolean'
         ? defaultFilterFn
         : this.filter
     },
-    activeItemSelector () {
+    actualValue () {
+      if (this.displayValue) {
+        return this.displayValue
+      }
+      if (!this.multiple) {
+        const opt = this.options.find(opt => opt.value === this.model)
+        return opt ? opt.label : ''
+      }
+
+      const opt = this.selectedOptions.map(opt => opt.label)
+      return opt.length ? opt.join(', ') : ''
+    },
+    selectedOptions () {
+      if (this.multiple) {
+        return this.length > 0
+          ? this.options.filter(opt => this.model.includes(opt.value))
+          : []
+      }
+    },
+    hasChips () {
+      return this.multiple && this.chips
+    },
+    length () {
       return this.multiple
-        ? `.q-item-side > ${this.toggle ? '.q-toggle' : '.q-checkbox'} > .active`
-        : `.q-item.active`
+        ? this.model.length
+        : ([null, undefined, ''].includes(this.model) ? 0 : 1)
+    },
+    additionalLength () {
+      return this.displayValue && this.displayValue.length > 0
     }
   },
   methods: {
@@ -212,6 +316,7 @@ export default {
       this[this.$refs.popover.showing ? 'hide' : 'show']()
     },
     show () {
+      this.__keyboardCalcIndex()
       return this.$refs.popover.show()
     },
     hide () {
@@ -224,31 +329,86 @@ export default {
       }
     },
 
+    __keyboardCalcIndex () {
+      this.keyboardIndex = -1
+      const sel = this.multiple ? this.selectedOptions.map(o => o.value) : [this.model]
+      this.$nextTick(() => {
+        const index = sel === void 0 ? -1 : Math.max(-1, this.visibleOptions.findIndex(opt => sel.includes(opt.value)))
+        if (index > -1) {
+          this.keyboardMoveDirection = true
+          setTimeout(() => { this.keyboardMoveDirection = false }, 500)
+          this.__keyboardShow(index)
+        }
+      })
+    },
+    __keyboardCustomKeyHandle (key, e) {
+      switch (key) {
+        case 13: // ENTER key
+        case 32: // SPACE key
+          if (!this.$refs.popover.showing) {
+            this.show()
+          }
+          break
+      }
+    },
+    __keyboardShowTrigger () {
+      this.show()
+    },
+    __keyboardSetSelection (index) {
+      const opt = this.visibleOptions[index]
+
+      if (this.multiple) {
+        this.__toggleMultiple(opt.value, opt.disable)
+      }
+      else {
+        this.__singleSelect(opt.value, opt.disable)
+      }
+    },
+    __keyboardIsSelectableIndex (index) {
+      return index > -1 && index < this.visibleOptions.length && !this.visibleOptions[index].disable
+    },
+    __mouseEnterHandler (e, index) {
+      if (!this.keyboardMoveDirection) {
+        this.keyboardIndex = index
+      }
+    },
     __onFocus () {
+      if (this.disable || this.focused) {
+        return
+      }
       this.focused = true
+      this.$emit('focus')
+    },
+    __onShow () {
+      if (this.disable) {
+        return
+      }
+      this.__onFocus()
       if (this.filter && this.autofocusFilter) {
         this.$refs.filter.focus()
       }
-      this.$emit('focus')
-      const selected = this.$refs.popover.$el.querySelector(this.activeItemSelector)
-      if (selected) {
-        selected.scrollIntoView()
-      }
     },
     __onBlur (e) {
-      this.__onClose()
       setTimeout(() => {
         const el = document.activeElement
-        if (el !== document.body && !this.$refs.popover.$el.contains(el)) {
+        if (
+          !this.$refs.popover.showing ||
+          (el !== document.body && !this.$refs.popover.$el.contains(el))
+        ) {
+          this.__onClose()
           this.hide()
         }
       }, 1)
     },
     __onClose () {
+      this.terms = ''
       this.focused = false
       this.$emit('blur')
-      this.terms = ''
-      this.$emit('change', this.model)
+      this.$nextTick(() => {
+        if (JSON.stringify(this.model) !== JSON.stringify(this.value)) {
+          this.$emit('change', this.model)
+        }
+      })
     },
     __singleSelect (val, disable) {
       if (disable) {
@@ -256,6 +416,66 @@ export default {
       }
       this.__emit(val)
       this.hide()
+    },
+    __toggleMultiple (value, disable) {
+      if (disable) {
+        return
+      }
+      const
+        model = this.model,
+        index = model.indexOf(value)
+
+      if (index > -1) {
+        model.splice(index, 1)
+      }
+      else {
+        model.push(value)
+      }
+
+      this.$emit('input', model)
+    },
+    __emit (value) {
+      this.$emit('input', value)
+      this.$nextTick(() => {
+        if (JSON.stringify(value) !== JSON.stringify(this.value)) {
+          this.$emit('change', value)
+        }
+      })
+    },
+    __setModel (val, forceUpdate) {
+      this.model = val || (this.multiple ? [] : null)
+      this.$emit('input', this.model)
+      if (forceUpdate || !this.$refs.popover.showing) {
+        this.__onClose()
+      }
+    },
+    __getChipTextColor (optColor) {
+      if (this.chipsColor) {
+        return this.chipsColor
+      }
+      if (this.isInvertedLight) {
+        return this.invertedLight ? optColor || this.color : 'white'
+      }
+      if (this.isInverted) {
+        return optColor || (this.invertedLight ? 'grey-10' : this.color)
+      }
+      return this.dark
+        ? optColor || this.color
+        : 'white'
+    },
+    __getChipBgColor (optColor) {
+      if (this.chipsBgColor) {
+        return this.chipsBgColor
+      }
+      if (this.isInvertedLight) {
+        return this.invertedLight ? 'grey-10' : optColor || this.color
+      }
+      if (this.isInverted) {
+        return this.invertedLight ? this.color : 'white'
+      }
+      return this.dark
+        ? 'white'
+        : optColor || this.color
     }
   }
 }

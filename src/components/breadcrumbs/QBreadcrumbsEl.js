@@ -2,13 +2,12 @@ import { QIcon } from '../icon'
 import { RouterLinkMixin } from '../../utils/router-link'
 
 export default {
-  name: 'q-breadcrumb-el',
+  name: 'q-breadcrumbs-el',
   mixins: [{ props: RouterLinkMixin.props }],
   props: {
     label: String,
     icon: String,
-    color: String,
-    noRipple: Boolean
+    color: String
   },
   computed: {
     link () {
@@ -17,19 +16,12 @@ export default {
   },
   render (h) {
     return h(this.link ? 'router-link' : 'span', {
-      staticClass: 'q-breadcrumb-el flex inline items-center relative-position',
-      props: this.link
-        ? {
-          to: this.to,
-          exact: this.exact,
-          append: this.append,
-          replace: this.replace
-        }
-        : null
+      staticClass: 'q-breadcrumbs-el flex inline items-center relative-position',
+      props: this.link ? this.$props : null
     },
     this.label || this.icon
       ? [
-        this.icon ? h(QIcon, { staticClass: 'q-breacrumb-el-icon q-mr-sm', props: { name: this.icon } }) : null,
+        this.icon ? h(QIcon, { staticClass: 'q-breacrumbs-el-icon q-mr-sm', props: { name: this.icon } }) : null,
         this.label
       ]
       : [ this.$slots.default ]

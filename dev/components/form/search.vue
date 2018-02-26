@@ -6,9 +6,9 @@
       </div>
 
       <div style="margin-top: 15px">
-        <q-search @change="onChange" @input="onInput" v-model="search" align="right" suffix="Quasar" style="width: 300px"></q-search>
-        <q-search @change="onChange" @input="onInput" v-model="search" color="orange" placeholder="Search"></q-search>
-        <q-search @change="val => { search = val; onChange(val); }" @input="onInput" :value="search" color="orange" placeholder="Search (onChange)"></q-search>
+        <q-search @change="onChange" @input="onInput" @clear="onClear" v-model="search" align="right" suffix="Quasar" style="width: 300px"></q-search>
+        <q-search @change="onChange" @input="onInput" @clear="onClear" clear-value="" v-model="search" color="orange" placeholder="Search"></q-search>
+        <q-search @change="val => { search = val; onChange(val); }" @input="onInput" @clear="onClear" :value="search" color="orange" placeholder="Search (onChange)"></q-search>
         <q-search v-model="search" color="secondary" icon="explore" placeholder="PlacesPlacesPlacesPlacesPlacesPlacesPlaces"></q-search>
         <q-search v-model="search" color="primary" icon="local_airport" placeholder="Airports"></q-search>
         <q-search v-model="search" color="dark" icon="local_hotel" placeholder="Hotels"></q-search>
@@ -22,7 +22,9 @@
         <q-search inverted v-model="search" color="secondary" icon="explore" placeholder="PlacesPlacesPlacesPlacesPlacesPlacesPlaces"></q-search>
         <q-search inverted v-model="search" color="primary" icon="local_airport" placeholder="Airports"></q-search>
         <q-search inverted v-model="search" color="dark" icon="local_hotel" placeholder="Hotels"></q-search>
-        <q-search inverted stack-label="Stack Label" v-model="search" color="amber" icon="local_hotel" placeholder="Hotels"></q-search>
+        <q-search inverted v-model="search" color="amber" icon="local_hotel" placeholder="Hotels" stack-label="Stack Label"></q-search>
+        <q-search inverted v-model="search" color="white" :dark="false" icon="local_hotel" placeholder="Hotels"></q-search>
+        <q-search inverted v-model="search" color="white" :dark="false" icon="local_hotel" placeholder="Hotels" stack-label="Stack Label"></q-search>
       </div>
 
       <p class="caption">Numeric Format</p>
@@ -77,6 +79,9 @@ export default {
     },
     onInput (val) {
       console.log('@input', JSON.stringify(val))
+    },
+    onClear (val) {
+      console.log('@clear', JSON.stringify(val))
     }
   }
 }
